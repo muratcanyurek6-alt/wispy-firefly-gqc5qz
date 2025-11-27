@@ -1,13 +1,4 @@
 import React, { useState, useEffect } from "react";
-
-// Tailwind CSS'i yüklemek için özel bileşen
-const TailwindLink = () => (
-  <link
-    href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
-    rel="stylesheet"
-  />
-);
-
 import { initializeApp } from "firebase/app";
 import {
   getAuth,
@@ -60,9 +51,7 @@ import {
   Database,
 } from "lucide-react";
 
-/* ------------------------------------------------------------------
-   FIREBASE AYARLARI
------------------------------------------------------------------- */
+/* --- FIREBASE AYARLARI --- */
 const firebaseConfig = {
   apiKey: "AIzaSyAQmTeBxY21B0y51uJVfGCirJIi4xuSeWE",
   authDomain: "linkup-app-6318c.firebaseapp.com",
@@ -75,13 +64,12 @@ const firebaseConfig = {
 
 const apiKey = "";
 
-/* ------------------------------------------------------------------
-   SİSTEM BAŞLATILIYOR
------------------------------------------------------------------- */
+/* --- SİSTEM BAŞLATILIYOR --- */
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+/* --- KATEGORİLER --- */
 const CATEGORIES = [
   { id: "COLLAB", label: "Collab 🎥", color: "purple" },
   { id: "S4S", label: "S4S / Promo 🔄", color: "pink" },
@@ -91,6 +79,7 @@ const CATEGORIES = [
   { id: "SERVICE", label: "Services 📸", color: "orange" },
 ];
 
+/* --- SAHTE VERİ OLUŞTURUCU --- */
 const generateFakeData = async () => {
   const NAMES = [
     "Jessica",
@@ -172,7 +161,6 @@ const generateFakeData = async () => {
     const isBoosted = Math.random() > 0.85;
     const isUrgent = Math.random() > 0.9;
     const isVerified = Math.random() > 0.6;
-
     const randomTime =
       Date.now() - Math.floor(Math.random() * 30 * 24 * 60 * 60 * 1000);
 
@@ -278,7 +266,7 @@ export default function App() {
         setShowOnboarding(true);
       }
     } catch (error) {
-      alert("Error: " + error.message);
+      alert("Hata: " + error.message);
     }
   };
 
@@ -323,16 +311,16 @@ export default function App() {
       setShowPostModal(false);
       setEditingPost(null);
     } catch (error) {
-      alert("Error posting ad.");
+      alert("İlan gönderilemedi.");
     }
   };
 
   const handleDelete = async (postId) => {
-    if (window.confirm("Delete this ad?")) {
+    if (window.confirm("İlanı silmek istiyor musunuz?")) {
       try {
         await deleteDoc(doc(db, "posts", postId));
       } catch (error) {
-        console.error("Error deleting:", error);
+        console.error("Silme hatası:", error);
       }
     }
   };
@@ -346,8 +334,8 @@ export default function App() {
   };
 
   const generateBioWithGemini = async (keywords) => {
-    if (!keywords) return "Lütfen anahtar kelime girin.";
-    if (!apiKey) return "API Key eksik (Kod içinde tanımlanmalı).";
+    if (!keywords) return "Anahtar kelime giriniz.";
+    if (!apiKey) return "API Key eksik.";
 
     try {
       const response = await fetch(
@@ -373,7 +361,7 @@ export default function App() {
         data.candidates?.[0]?.content?.parts?.[0]?.text || "Bio oluşturulamadı."
       );
     } catch (error) {
-      return "AI Servisi şu an kapalı.";
+      return "Servis şu an kapalı.";
     }
   };
 
@@ -398,8 +386,13 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-gray-900 text-gray-200 font-sans selection:bg-pink-500 selection:text-white pb-20 md:pb-0">
-      <TailwindLink />
-      <nav className="sticky top-0 z-40 bg-gray-900/80 backdrop-blur-xl border-b border-gray-800">
+      {/* Tailwind CSS CDN Fallback */}
+      <link
+        href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+        rel="stylesheet"
+      />
+
+      <nav className="sticky top-0 z-40 bg-gray-900/90 backdrop-blur-xl border-b border-gray-800">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <div
             className="flex items-center gap-2 cursor-pointer"
@@ -517,6 +510,7 @@ export default function App() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search..."
                   className="bg-transparent border-none text-white px-3 py-2 focus:ring-0 outline-none w-full placeholder:text-gray-600 text-sm"
+                  style={{ color: "white" }}
                 />
               </div>
             </div>
@@ -718,6 +712,7 @@ export default function App() {
           <div className="p-3 border-t border-gray-800">
             <input
               className="w-full bg-gray-950 rounded-full px-4 py-2 text-white outline-none border border-gray-800"
+              style={{ color: "white", backgroundColor: "#1f2937" }}
               placeholder="Message..."
             />
           </div>
@@ -761,11 +756,13 @@ function AuthModal({ mode, setMode, onClose, onSubmit }) {
           onSubmit={(e) => onSubmit(e, email, password)}
           className="space-y-4"
         >
+          {/* BURASI DÜZELTİLDİ: style={{ color: 'white', backgroundColor: '#1f2937' }} eklendi */}
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full bg-gray-950 border border-gray-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-pink-500"
+            className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-pink-500"
+            style={{ color: "white", backgroundColor: "#1f2937" }}
             placeholder="Email"
             required
           />
@@ -773,7 +770,8 @@ function AuthModal({ mode, setMode, onClose, onSubmit }) {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full bg-gray-950 border border-gray-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-pink-500"
+            className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-pink-500"
+            style={{ color: "white", backgroundColor: "#1f2937" }}
             placeholder="Password"
             required
           />
@@ -809,10 +807,12 @@ function OnboardingModal({ onComplete }) {
           src={data.image}
           className="h-24 w-24 rounded-full mx-auto mb-4 bg-gray-800 border-4 border-gray-800"
         />
+        {/* BURASI DÜZELTİLDİ */}
         <input
           value={data.name}
           onChange={(e) => setData({ ...data, name: e.target.value })}
-          className="w-full bg-gray-950 border border-gray-700 rounded-xl px-4 py-3 text-white text-sm outline-none mb-6"
+          className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white text-sm outline-none mb-6"
+          style={{ color: "white", backgroundColor: "#1f2937" }}
           placeholder="Display Name"
         />
         <button
@@ -849,6 +849,7 @@ function PostModal({ onClose, onSubmit }) {
             value={formData.type}
             onChange={(e) => setFormData({ ...formData, type: e.target.value })}
             className="w-full bg-gray-950 border border-gray-700 rounded-xl px-4 py-3 text-white text-sm outline-none"
+            style={{ color: "white", backgroundColor: "#1f2937" }}
           >
             {CATEGORIES.map((c) => (
               <option key={c.id} value={c.id}>
@@ -856,6 +857,7 @@ function PostModal({ onClose, onSubmit }) {
               </option>
             ))}
           </select>
+          {/* BURASI DÜZELTİLDİ */}
           <input
             value={formData.location}
             onChange={(e) =>
@@ -863,13 +865,16 @@ function PostModal({ onClose, onSubmit }) {
             }
             placeholder="Location"
             className="w-full bg-gray-950 border border-gray-700 rounded-xl px-4 py-3 text-white text-sm outline-none"
+            style={{ color: "white", backgroundColor: "#1f2937" }}
           />
+          {/* BURASI DÜZELTİLDİ */}
           <textarea
             rows="3"
             value={formData.desc}
             onChange={(e) => setFormData({ ...formData, desc: e.target.value })}
             placeholder="Details..."
             className="w-full bg-gray-950 border border-gray-700 rounded-xl px-4 py-3 text-white text-sm outline-none"
+            style={{ color: "white", backgroundColor: "#1f2937" }}
           ></textarea>
           <div className="flex gap-2 text-white text-sm font-bold">
             <div
