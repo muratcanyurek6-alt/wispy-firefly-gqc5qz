@@ -158,43 +158,290 @@ const generateFakeData = async () => {
   const TEMPLATES = [
     {
       type: "COLLAB",
-      text: "I'm in Miami for the weekend! Looking for a girl to shoot content with. I have an Airbnb with a pool. DM me! 📸💦",
-    },
-    {
-      type: "S4S",
-      text: "Doing mass S4S drops on my main page (150k subs). DM proof of purchase or swap. Let's grow together! 🔄📈",
-    },
-    {
-      type: "TRAVEL",
-      text: "Going to Dubai next month! Need a travel buddy to split hotel costs and take photos of each other. Serious inquiries only. ✈️🇦🇪",
-    },
-    {
-      type: "SERVICE",
-      text: "Professional photographer available in LA area. 4K video, fast edits, discreet. Special rates for new creators. DM for portfolio.",
-    },
-    {
-      type: "HOUSING",
-      text: "1 Room available in our Content House in Hills. $2500/mo. Pool, Gym, Studio included. Must be verified creator. 🏠✨",
-    },
-    {
-      type: "AGENCY",
-      text: "Top 1% Agency hiring new talent. We handle chatting, marketing & viral growth. No upfront fees. We scale you to 6 figures. 🚀💸",
+      text: "In LA this week! Looking for a shy/soft creator for cozy bedroom shoot vibes. NO explicit scenes shown. DM your OF or TikTok. 🌙📸",
     },
     {
       type: "COLLAB",
-      text: "In Vegas for AVN awards! Who wants to shoot? G/G content only. I have my own equipment. ✨👯‍♀️",
+      text: "Anyone down for a cute couple-style photoshoot in SF? Coffee shop + matching outfits. You DON'T need a partner, we fake it lol. ☕💑📷",
+    },
+    {
+      type: "COLLAB",
+      text: "Looking for someone with natural look (no heavy makeup) to shoot shower content. Simple, steamy, clean aesthetic. NYC this weekend. 🚿✨",
+    },
+    {
+      type: "COLLAB",
+      text: "Prefer tattooed creators for alt-style hotel shoot. I’m in Berlin 3 days. Think grunge, neon, smoking aesthetic. 🔥🌆",
+    },
+    {
+      type: "COLLAB",
+      text: "Need a chatty girl for playful roleplay clips. Nothing crazy, more comedic. London! DM your vibe pls 😂💬🎭",
+    },
+    {
+      type: "COLLAB",
+      text: "ISO curvy creator for lingerie try-on haul. We both model & rate outfits. Miami. DM sizes + vibe. 💃📦",
+    },
+    {
+      type: "COLLAB",
+      text: "SFW Yoga collab for Reels/TikToks + BTS OF. Must be flexible or fake it well lol. Austin tomorrow. 🧘‍♀️📲",
+    },
+    {
+      type: "COLLAB",
+      text: "Couple creator looking for another girl to join soft G/G (no toys). Vancouver. We provide location + lighting. 💖",
+    },
+    {
+      type: "COLLAB",
+      text: "Looking to do POV ‘morning with gf’ style shoot (pancakes, kisses, blanket shots). Paris Airbnb. 🍳🛏️❤️",
+    },
+    {
+      type: "COLLAB",
+      text: "Creators in Toronto? Shooting locker room/bathroom aesthetic content. Funny + spicy. DM. 🛁🤳",
+    },
+
+    {
+      type: "S4S",
+      text: "S4S Twitter only. I have 110k promo page. Story + pinned. Must show analytics. Serious only. ⚡📈",
     },
     {
       type: "S4S",
-      text: "L4L (Like for Like) on my latest post! Link in comments. Retweet for Retweet. Let's boost engagement! 🔥",
+      text: "L4L & C4C for TikTok creators posting spicy transitions. Must be 18+. DM link. 👀🎬",
     },
     {
-      type: "SERVICE",
-      text: "Need a Chatter? I have 2 years of experience, I know how to sell. English/Spanish. Commission based. 💬💰",
+      type: "S4S",
+      text: "S4S today only. My Reddit page is 22k followers. I post daily at peak times. Need similar. 🦊📩",
+    },
+    {
+      type: "S4S",
+      text: "Getting shadowbanned sucks lol. Looking for small creator swaps (1–15k subs). No ego, just growth 💚📈",
+    },
+    {
+      type: "S4S",
+      text: "Need ONLY real creators, no AI faces. I check with FaceCheck. Swap? 😭🤚",
+    },
+    {
+      type: "S4S",
+      text: "Twitter/TT shoutouts available. If you’re active daily, DM your top clip. 🌀🔥",
+    },
+    {
+      type: "S4S",
+      text: "Shoutout train 8pm EST! Need 10 creators max. We all RT each other’s promo. Let’s blow up. 🌪️🔁",
+    },
+    {
+      type: "S4S",
+      text: "S4S on my niche page (alt goth/emo). If you fit that vibe DM. 🖤🩸",
+    },
+    {
+      type: "S4S",
+      text: "Looking 4 spicy cosplay creators for mutual promo thread today. DM your best outfit. 🧝‍♀️⚔️✨",
+    },
+    {
+      type: "S4S",
+      text: "Offering story shoutouts on my ‘fitness baddie’ page. You must post gym content. 💪🍑",
+    },
+
+    {
+      type: "TRAVEL",
+      text: "Going to Tulum in July. Need 2–3 girls to rent villa + daily beach shoots. Chill energy only. 🇲🇽🌴",
     },
     {
       type: "TRAVEL",
-      text: "Planning a trip to Tulum in January. Looking for 2-3 girls to rent a villa and create content for a week. 🌴🍹",
+      text: "Dubai for New Year! We’re booking yacht content day. You pay flight, we pay hotel + crew. DM. 🛥️✨",
+    },
+    {
+      type: "TRAVEL",
+      text: "Munich → Prague road trip filming creator vlog + spicy BTS. Need someone who can drive manual lol. 🚗🎥🇨🇿",
+    },
+    {
+      type: "TRAVEL",
+      text: "Going to Tokyo for maid cafe + anime collabs. Must love kawaii aesthetic. DM interest. 🇯🇵🍥💖",
+    },
+    {
+      type: "TRAVEL",
+      text: "Island trip in Greece (Santorini). Shared villa. We film sunrise dresses + pool shots. No explicit needed. 🇬🇷🌅",
+    },
+    {
+      type: "TRAVEL",
+      text: "LA → Vegas weekend. We’re splitting gas + food. Shoot casino outfit content + hotel BTS. 🎰💋",
+    },
+    {
+      type: "TRAVEL",
+      text: "Looking for 1 creator to join us in Istanbul for bath house aesthetic shoot. Must be okay with towel shots. 🇹🇷🛁🕌",
+    },
+    {
+      type: "TRAVEL",
+      text: "Miami yacht club got us discount. We need 3 girls comfortable in bikinis + lifestyle clips. 🌴⚓",
+    },
+    {
+      type: "TRAVEL",
+      text: "Airbnb cabin trip in Colorado. Fireplace + couples content (sweet, playful). Snowy vibes. ❄️🔥",
+    },
+    {
+      type: "TRAVEL",
+      text: "Bali trip in Nov. We share chef + videographer. We film sunrise yoga + pool. Must respect schedules. 🇮🇩📸",
+    },
+
+    {
+      type: "SERVICE",
+      text: "Chatter available. I close high-ticket customs, upsells & weird requests lol. Commission only. 💬💵",
+    },
+    {
+      type: "SERVICE",
+      text: "Video editor for OF creators. I do moans syncing + transitions + subtitles. Quick turnaround. 🎬👄",
+    },
+    {
+      type: "SERVICE",
+      text: "Twitter strategist. I ghostwrite horny tweets that SELL. DM for samples. 😈✍️",
+    },
+    {
+      type: "SERVICE",
+      text: "Looking for a photographer who understands ‘softcore but cute’ vibe. Paid gig. LA. 📸🍼",
+    },
+    {
+      type: "SERVICE",
+      text: "Need a lawyer experienced with OF contracts + agency exits. DM me (serious). ⚖️📩",
+    },
+    {
+      type: "SERVICE",
+      text: "If you’re struggling to convert traffic → subs, I make landing pages + funnels. Proof available. 🧲📈",
+    },
+    {
+      type: "SERVICE",
+      text: "Reddit posting service. I know which subs take what, and how strict mods are. I get approvals. 🔺👀",
+    },
+    {
+      type: "SERVICE",
+      text: "Cosplay costume maker. I custom build outfits for creators, from maid to demon girl. DM. 🧵😈",
+    },
+    {
+      type: "SERVICE",
+      text: "Need help pricing? I make menus, bundles, upsells that actually sell. $30 flat. 💰🍒",
+    },
+    {
+      type: "SERVICE",
+      text: "German/English bilingual chatter. I turn shy subs into spenders. DM rates. 🇩🇪💶💬",
+    },
+
+    {
+      type: "HOUSING",
+      text: "Room in our LA content house (Studio City). You must be creator. Filming schedule organized. $1800/mo. 🏠🎥",
+    },
+    {
+      type: "HOUSING",
+      text: "Short stay (2–4 weeks) in our London flat. We shoot in living room. Must be okay with people filming. 📹🏡",
+    },
+    {
+      type: "HOUSING",
+      text: "Shared room in Miami mansion content house. You get access to studio + pool + cameras. Women only. 💦📸",
+    },
+    {
+      type: "HOUSING",
+      text: "Tiny room in NYC but crazy skyline rooftop access. Perfect for balcony shoots. $1400/mo. 🌇📷",
+    },
+    {
+      type: "HOUSING",
+      text: "Paris sublet (June). Cute balcony for lingerie shoots. DM for pics. 🇫🇷💋",
+    },
+    {
+      type: "HOUSING",
+      text: "Content friendly apartment in Barcelona. Rent + gear share. Filming allowed everywhere. 🇪🇸📸",
+    },
+    {
+      type: "HOUSING",
+      text: "Need roommate in Toronto. Must be comfortable with occasional filming in common areas. 🍁📹",
+    },
+    {
+      type: "HOUSING",
+      text: "Room open in Vegas house for creators going to AVN week. Short-term. 🎰🏡",
+    },
+    {
+      type: "HOUSING",
+      text: "Berlin loft share. We shoot grunge vibes against graffiti walls. $700/mo. 🇩🇪🖤",
+    },
+    {
+      type: "HOUSING",
+      text: "Looking for 1 girl to share Airbnb during photoshoot week in Chicago. Pool + steam room. DM interest. 🏊‍♀️📸",
+    },
+
+    {
+      type: "AGENCY",
+      text: "Small agency taking max 6 girls. We do TikTok + Reddit + managed chatters. Rev share starts 25%. 🚀📩",
+    },
+    {
+      type: "AGENCY",
+      text: "UK-based agency hiring EU creators. We provide videographers + editors + scripts. DM if active. 🇪🇺🎥",
+    },
+    {
+      type: "AGENCY",
+      text: "You make good content but flop on sales? We fix conversion, not just views. 0 upfront. 💸🔧",
+    },
+    {
+      type: "AGENCY",
+      text: "Spanish-speaking agency hiring new girls for LATAM market. We handle promotions + prices. 🇲🇽🇨🇴💬",
+    },
+    {
+      type: "AGENCY",
+      text: "Boutique management for alt/goth creators only. Must fit aesthetic. No exceptions. 🖤🩸",
+    },
+    {
+      type: "AGENCY",
+      text: "Looking for creators with 5–200 subs to scale from scratch. We grow small pages too. 📈🌱",
+    },
+    {
+      type: "AGENCY",
+      text: "Agency offering content planning + weekly scripts + customs strategies. No bots, no fake growth. 📅🧠",
+    },
+    {
+      type: "AGENCY",
+      text: "We take over DMs, pricing, funnels & promo. You just create content. DM if overwhelmed. 💼💋",
+    },
+    {
+      type: "AGENCY",
+      text: "LATAM/US agency expanding. Must be over 18 and post consistently. We provide editing + posting. 🌎🎬",
+    },
+    {
+      type: "AGENCY",
+      text: "We help creators exit bad agencies. Free audit + contract review. DM privately. 🔓📑",
+    },
+
+    // EXTRA MIX (GEN Z VIBE + MEMES + NATURAL)
+    {
+      type: "COLLAB",
+      text: "Any girl down to film couple content where we pretend to be toxic but cute? 😂💔💖 NYC",
+    },
+    {
+      type: "COLLAB",
+      text: "Soft girl x gamer girl collab? Think headset, LED room, thigh highs. DM. 🎮💓",
+    },
+    {
+      type: "S4S",
+      text: "RT me I RT u. Must be spicy enough to make men stare but classy enough for Twitter mods 😭🔥",
+    },
+    {
+      type: "SERVICE",
+      text: "I ghostwrite flirty replies that make guys think you love them lol. Upsells go brrr 💸💌",
+    },
+    {
+      type: "TRAVEL",
+      text: "Thinking Ibiza for rave + shower content after club. Messy hair aesthetic. 🌈🛁",
+    },
+    {
+      type: "HOUSING",
+      text: "Looking for clean girl to live with. If you don’t clean we fight. House is content friendly tho 😭🏠📸",
+    },
+    {
+      type: "AGENCY",
+      text: "We don’t spam subs. We build parasocial addiction ethically (kinda). DM 💘🧠",
+    },
+    {
+      type: "COLLAB",
+      text: "Need someone who looks innocent but isn’t. That vibe sells. LA pls 👼😈",
+    },
+    {
+      type: "SERVICE",
+      text: "Spotify editor for moan beats + sexy TikTok remixes. DM your voice 😂🎧",
+    },
+    {
+      type: "S4S",
+      text: "S4S but only if your fans don’t ask ‘free?’ every 3 mins 😭🧍‍♂️",
     },
   ];
 
