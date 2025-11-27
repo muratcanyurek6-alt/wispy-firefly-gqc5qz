@@ -150,8 +150,15 @@ const generateFakeData = async () => {
 
   // 12 Farklı ve Gerçekçi Fotoğraf (Unsplash)
   const AVATARS = [
-    "https://i.imgur.com/6ZHmleV.jpg",
-    "https://i.imgur.com/6ZHmleV.jpg",
+    "https://t1.pixhost.to/thumbs/10478/665420531_a1-2.jpg",
+    "https://t1.pixhost.to/thumbs/10478/665420534_a1-3.jpg",
+    "https://t1.pixhost.to/thumbs/10478/665420536_a1-4.jpg",
+    "https://t1.pixhost.to/thumbs/10478/665420539_a1-5.jpg",
+    "https://t1.pixhost.to/thumbs/10478/665420541_b1-1.jpg",
+    "https://t1.pixhost.to/thumbs/10478/665420543_b1-2.jpg",
+    "https://t1.pixhost.to/thumbs/10478/665420544_b1-3.jpg",
+    "https://t1.pixhost.to/thumbs/10478/665420545_b1-4.jpg",
+    "https://t1.pixhost.to/thumbs/10478/665420547_b1-5.jpg",
   ];
 
   // İlan Metinleri
