@@ -52,6 +52,15 @@ import {
   LogOut,
 } from "lucide-react";
 
+// --- TASARIM KURTARICI (CDN) ---
+// Bu satır, ayarlar bozuk olsa bile tasarımı zorla yükler.
+const TailwindCDN = () => (
+  <link
+    href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+    rel="stylesheet"
+  />
+);
+
 /* --- FIREBASE AYARLARI --- */
 const firebaseConfig = {
   apiKey: "AIzaSyAQmTeBxY21B0y51uJVfGCirJIi4xuSeWE",
@@ -80,9 +89,8 @@ const CATEGORIES = [
   { id: "SERVICE", label: "Services 📸", color: "orange" },
 ];
 
-/* --- GELİŞMİŞ SAHTE VERİ OLUŞTURUCU (GERÇEKÇİ MOD) --- */
+/* --- SAHTE VERİ OLUŞTURUCU --- */
 const generateFakeData = async () => {
-  // Gerçekçi Model İsimleri
   const NAMES = [
     "Jessica",
     "Amber",
@@ -104,12 +112,7 @@ const generateFakeData = async () => {
     "Coco",
     "Gigi",
     "Lola",
-    "Zara",
-    "Lexi",
-    "Nikki",
-    "Trixie",
   ];
-
   const SURNAME_EXT = [
     "xo",
     "Official",
@@ -122,8 +125,6 @@ const generateFakeData = async () => {
     "X",
     "Queen",
   ];
-
-  // Sektöre Uygun Lokasyonlar
   const LOCATIONS = [
     "Miami, FL",
     "Los Angeles, CA",
@@ -135,11 +136,8 @@ const generateFakeData = async () => {
     "Austin, TX",
     "Bali, Indonesia",
     "Online",
-    "Mykonos, Greece",
-    "Ibiza, Spain",
   ];
 
-  // Gerçekçi Model Fotoğrafları (Unsplash - Yüksek Kalite)
   const AVATARS = [
     "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80",
     "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
@@ -149,17 +147,14 @@ const generateFakeData = async () => {
     "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&w=200&q=80",
     "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=200&q=80",
     "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=80",
-    "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=200&q=80", // Erkek model (videographer vs için)
     "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=200&q=80",
     "https://images.unsplash.com/photo-1514315384763-ba401779410f?auto=format&fit=crop&w=200&q=80",
-    "https://images.unsplash.com/photo-1519345182560-3f2917c472ef?auto=format&fit=crop&w=200&q=80",
   ];
 
-  // Sektöre Özel Gerçekçi İlan Metinleri
   const TEMPLATES = [
     {
       type: "COLLAB",
-      text: "I'm in Miami for the weekend! Looking for a girl to shoot content with. I have an Airbnb with a pool. DM me! 📸💦",
+      text: "In Miami for the weekend! Looking for a girl to shoot content with. I have an Airbnb with a pool. DM me! 📸💦",
     },
     {
       type: "S4S",
@@ -167,11 +162,11 @@ const generateFakeData = async () => {
     },
     {
       type: "TRAVEL",
-      text: "Going to Dubai next month! Need a travel buddy to split hotel costs and take photos of each other. Serious inquiries only. ✈️🇦🇪",
+      text: "Going to Dubai next month! Need a travel buddy to split hotel costs. Serious inquiries only. ✈️🇦🇪",
     },
     {
       type: "SERVICE",
-      text: "Professional photographer available in LA area. 4K video, fast edits, discreet. Special rates for new creators. DM for portfolio.",
+      text: "Professional photographer available in LA area. 4K video, fast edits, discreet. Special rates for new creators.",
     },
     {
       type: "HOUSING",
@@ -179,7 +174,7 @@ const generateFakeData = async () => {
     },
     {
       type: "AGENCY",
-      text: "Top 1% Agency hiring new talent. We handle chatting, marketing & viral growth. No upfront fees. We scale you to 6 figures. 🚀💸",
+      text: "Top 1% Agency hiring new talent. We handle chatting, marketing & viral growth. No upfront fees. 🚀💸",
     },
     {
       type: "COLLAB",
@@ -189,17 +184,8 @@ const generateFakeData = async () => {
       type: "S4S",
       text: "L4L (Like for Like) on my latest post! Link in comments. Retweet for Retweet. Let's boost engagement! 🔥",
     },
-    {
-      type: "SERVICE",
-      text: "Need a Chatter? I have 2 years of experience, I know how to sell. English/Spanish. Commission based. 💬💰",
-    },
-    {
-      type: "TRAVEL",
-      text: "Planning a trip to Tulum in January. Looking for 2-3 girls to rent a villa and create content for a week. 🌴🍹",
-    },
   ];
 
-  // Her basışta 10 tane ekle
   let count = 0;
   for (let i = 0; i < 10; i++) {
     const randomName =
@@ -210,13 +196,9 @@ const generateFakeData = async () => {
     const randomTemplate =
       TEMPLATES[Math.floor(Math.random() * TEMPLATES.length)];
     const randomAvatar = AVATARS[Math.floor(Math.random() * AVATARS.length)];
-
-    // İlan özelliklerini rastgele ama mantıklı dağıt
-    const isBoosted = Math.random() > 0.85; // %15 şansla Öne Çıkan
-    const isUrgent = Math.random() > 0.9; // %10 şansla Acil
-    const isVerified = Math.random() > 0.6; // %40 şansla Onaylı Hesap
-
-    // Rastgele Tarih (Son 7 gün içinde, sanki yeni atılmış gibi)
+    const isBoosted = Math.random() > 0.85;
+    const isUrgent = Math.random() > 0.9;
+    const isVerified = Math.random() > 0.6;
     const randomTime =
       Date.now() - Math.floor(Math.random() * 7 * 24 * 60 * 60 * 1000);
 
@@ -234,23 +216,20 @@ const generateFakeData = async () => {
       type: randomTemplate.type,
       location: randomLoc,
       desc: randomTemplate.text,
-      tags: [randomTemplate.type, "New", "Viral", "Verified"],
+      tags: [randomTemplate.type, "New", "Viral"],
       createdAt: randomTime,
-      followers: Math.floor(Math.random() * 500) / 10 + "K", // Örn: 45.2K
-      socials: {
-        instagram: randomName.replace(/\s/g, "").toLowerCase(),
-        twitter: randomName.replace(/\s/g, "").toLowerCase() + "_off",
-      },
+      followers: Math.floor(Math.random() * 500) / 10 + "K",
+      socials: {},
     };
 
     try {
       await addDoc(collection(db, "posts"), fakePost);
       count++;
     } catch (error) {
-      console.error("Sahte veri eklenemedi:", error);
+      console.error("Hata:", error);
     }
   }
-  alert(`✅ ${count} adet yeni ve gerçekçi ilan eklendi! Sayfayı yenile.`);
+  alert(`✅ ${count} yeni ilan eklendi!`);
 };
 
 export default function App() {
@@ -398,7 +377,6 @@ export default function App() {
   const generateBioWithGemini = async (keywords) => {
     if (!keywords) return "Anahtar kelime giriniz.";
     if (!apiKey) return "API Key eksik.";
-
     try {
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`,
@@ -409,9 +387,7 @@ export default function App() {
             contents: [
               {
                 parts: [
-                  {
-                    text: `Write a short, professional bio for a content creator. Keywords: ${keywords}. Max 150 chars. 1 emoji. No hashtags.`,
-                  },
+                  { text: `Write a bio for creator. Keywords: ${keywords}` },
                 ],
               },
             ],
@@ -423,7 +399,7 @@ export default function App() {
         data.candidates?.[0]?.content?.parts?.[0]?.text || "Bio oluşturulamadı."
       );
     } catch (error) {
-      return "Servis şu an kapalı.";
+      return "Servis kapalı.";
     }
   };
 
@@ -448,6 +424,8 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-gray-900 text-gray-200 font-sans selection:bg-pink-500 selection:text-white pb-20 md:pb-0">
+      <TailwindCDN />
+
       <nav className="sticky top-0 z-40 bg-gray-900/90 backdrop-blur-xl border-b border-gray-800">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <div
@@ -483,7 +461,6 @@ export default function App() {
                 >
                   <LogOut className="h-4 w-4" />
                 </button>
-
                 <button
                   onClick={() => {
                     setEditingPost(null);
