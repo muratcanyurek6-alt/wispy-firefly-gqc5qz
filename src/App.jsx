@@ -91,6 +91,7 @@ const CATEGORIES = [
 
 /* --- SAHTE VERİ OLUŞTURUCU --- */
 const generateFakeData = async () => {
+  // İsimler
   const NAMES = [
     "Jessica",
     "Amber",
@@ -112,7 +113,12 @@ const generateFakeData = async () => {
     "Coco",
     "Gigi",
     "Lola",
+    "Zara",
+    "Lexi",
+    "Nikki",
+    "Trixie",
   ];
+
   const SURNAME_EXT = [
     "xo",
     "Official",
@@ -125,6 +131,8 @@ const generateFakeData = async () => {
     "X",
     "Queen",
   ];
+
+  // Lokasyonlar
   const LOCATIONS = [
     "Miami, FL",
     "Los Angeles, CA",
@@ -136,25 +144,209 @@ const generateFakeData = async () => {
     "Austin, TX",
     "Bali, Indonesia",
     "Online",
+    "Mykonos, Greece",
+    "Ibiza, Spain",
   ];
 
+  // 12 Farklı ve Gerçekçi Fotoğraf (Unsplash)
   const AVATARS = [
-    "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80",
-    "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
-    "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80",
-    "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=crop&w=200&q=80",
-    "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=200&q=80",
-    "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&w=200&q=80",
-    "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=200&q=80",
-    "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=80",
-    "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=200&q=80",
-    "https://images.unsplash.com/photo-1514315384763-ba401779410f?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/Z1xDkQMF?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/S437bqjc?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/Kxt3vvMc?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/W4BTsYc7?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/YB3yWXK5?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/cSD0K5Dx?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/DPC7Xh8G?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/5hPKMS0Q?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/Y7ppqR7g?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/1JQ5F2wD?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/9Hf7SssR?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/bMFkrhVn?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/fdqpZZdz?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/zHfNLR2W?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/FktgckxD?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/nqGrJKkq?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/ZRYRKYrZ?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/whYm5QvN?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/S7dW27ww?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/HL99JWZP?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/k28x2zYr?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/VWqQPnVz?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/DPCqyyXr?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/v4YGY2f0?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/NnNYrRGK?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/SDGy31y1?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/sfFc8kX?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/sdLj2TDy?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/LDFQwT1f?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/B2Xh2gRq?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/XZSqDDsW?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/B2BdPrw4?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/fYwCmsYd?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/Q7Bc1cqD?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/4wng6NrG?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/KjKnC4RH?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/C3skCmC4?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/rKQr1QdS?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/V01dDrXN?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/Kx68B1QD?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/nMwjrfz4?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/39dCfR9x?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/DPrfd5GS?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/GvnFV76H?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/2Ym4VNNJ?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/1Dt2CpT?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/Gzzs3r1?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/tpG4tSC4?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/hJwykTgW?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/27rdZMk1?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/JjkvCVYk?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/wFkJsty6?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/0yDxpdgT?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/S2T36VB?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/zTS1HnLc?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/C57wrcpN?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/KxdDsx36?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/SDkdwRY8?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/XqjkV7N?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/XmVPhhq?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/39QtdvNQ?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/DfssRM01?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/35ZJ5Mx5?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/kRzg1hN?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/D37cStg?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/KgshNf0?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/whnMW7LH?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/67fgyYgC?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/KzzTTZPq?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/sJJGFfvc?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/Gv8rdp3b?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/GvVhzcHY?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/qYzmV5Gb?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/fznrrX77?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/358cL0dP?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/YFqbC4Nb?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/ZRYRKYrZ?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/whYm5QvN?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/S7dW27ww?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/HL99JWZP?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/k28x2zYr?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/VWqQPnVz?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/5Xgwck2z?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/hRrTXxJt?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/zVP60G6x?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/Ldphtmmb?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/PZjcjtmN?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/9HZ1p3Ts?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/4RFHq2YY?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/k2qxDnLN?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/9m5drz4p?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/8gqBdXVv?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/4gp2fNT1?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/Y4mCMSrs?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/KcYT4XWp?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/JWd4B6Ch?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/s9nxc65H?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/sdMb8zSY?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/1fgZMmPQ?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/NDTb1pJ?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/Gj3JXvc?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/RGMWYL8t?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/Wp5Fw3p7?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/1GJqM3YK?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/FLQXm9Cz?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/0yZSvDb5?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/xSz4qY3g?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/PpFDdb6?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/Ps0Qvpkt?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/WpWrXc5V?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/rRV46JyM?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/r2FqFx21?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/RTcdTqVx?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/ymvP8ZwJ?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/vvKk6qG8?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/bj6mmfVR?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/Lhrxyy6k?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/WW7vvZVy?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/LDXX5F1J?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/fdp76k58?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/CKnNzrtH?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/B5879HjC?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/FqWDDrDR?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/FkLD5F4S?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/yn6hq9LM?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/Q7bVfjrp?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/JwBwMk8n?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/Ps1dCM2w?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/LdGqTwTM?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/TQh2pqL?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/QFNXtmrM?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/QjXJxKZV?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/0j2DNJL7?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/hP7xXqY?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/pj1YzGjC?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/zhKtvBcw?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/wrbRMnmP?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/mFdBpzq6?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/xcpmT5C?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/twhFbVx4?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/M5V8KsQb?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/N64dwF9v?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/0RsRd7y9?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/5X6pjry4?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/nMBkKRST?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/Swk3d7gd?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/FbhX9zkV?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/jv4gpT78?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/7J6x0tp4?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/9RDNpjR?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/HLW3zzR2?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/MkYgrS1s?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/0VFycf2h?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/60STNnCS?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/Xf79mfwz?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/QFCgGFKz?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/zhTjWBy9?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/BK6TgXRC?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/d0S5HK2k?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/gLwmkYPy?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/ZRZR344W?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/CTwFdns?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/PZfyk3bY?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/fdks3z1w?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/BKrvV4Qm?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/q3dhZyXD?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/GvStfksv?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/Xf25s9Cx?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/xtpGVfM3?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/HLGFdcpc?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/zhCHDVYq?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/ynH3ZHYf?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/kV3FyV0J?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/DHzmgsgb?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/bRKJhSP1?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/95vTCgV?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/Ng2VCztF?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/BH1pLGh2?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/Z1NRMy5p?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/n80K5RSt?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/PsvVNvj1?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/Hf7Cd0HB?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/JwPQxLVF?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/Xr5SFnXS?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/yLnWwXC?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/pjDkGqT7?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/C3rXfMLv?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/n8jLjwSs?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/zV3TtFNH?auto=format&fit=crop&w=200&q=80",
+    "https://ibb.co/KcYvRDBv?auto=format&fit=crop&w=200&q=80",
   ];
 
+  // İlan Metinleri
   const TEMPLATES = [
     {
       type: "COLLAB",
-      text: "In Miami for the weekend! Looking for a girl to shoot content with. I have an Airbnb with a pool. DM me! 📸💦",
+      text: "I'm in Miami for the weekend! Looking for a girl to shoot content with. I have an Airbnb with a pool. DM me! 📸💦",
     },
     {
       type: "S4S",
@@ -162,11 +354,11 @@ const generateFakeData = async () => {
     },
     {
       type: "TRAVEL",
-      text: "Going to Dubai next month! Need a travel buddy to split hotel costs. Serious inquiries only. ✈️🇦🇪",
+      text: "Going to Dubai next month! Need a travel buddy to split hotel costs and take photos of each other. Serious inquiries only. ✈️🇦🇪",
     },
     {
       type: "SERVICE",
-      text: "Professional photographer available in LA area. 4K video, fast edits, discreet. Special rates for new creators.",
+      text: "Professional photographer available in LA area. 4K video, fast edits, discreet. Special rates for new creators. DM for portfolio.",
     },
     {
       type: "HOUSING",
@@ -174,7 +366,7 @@ const generateFakeData = async () => {
     },
     {
       type: "AGENCY",
-      text: "Top 1% Agency hiring new talent. We handle chatting, marketing & viral growth. No upfront fees. 🚀💸",
+      text: "Top 1% Agency hiring new talent. We handle chatting, marketing & viral growth. No upfront fees. We scale you to 6 figures. 🚀💸",
     },
     {
       type: "COLLAB",
@@ -184,9 +376,18 @@ const generateFakeData = async () => {
       type: "S4S",
       text: "L4L (Like for Like) on my latest post! Link in comments. Retweet for Retweet. Let's boost engagement! 🔥",
     },
+    {
+      type: "SERVICE",
+      text: "Need a Chatter? I have 2 years of experience, I know how to sell. English/Spanish. Commission based. 💬💰",
+    },
+    {
+      type: "TRAVEL",
+      text: "Planning a trip to Tulum in January. Looking for 2-3 girls to rent a villa and create content for a week. 🌴🍹",
+    },
   ];
 
   let count = 0;
+  // 10 ADET İLAN EKLEME DÖNGÜSÜ
   for (let i = 0; i < 10; i++) {
     const randomName =
       NAMES[Math.floor(Math.random() * NAMES.length)] +
@@ -199,6 +400,8 @@ const generateFakeData = async () => {
     const isBoosted = Math.random() > 0.85;
     const isUrgent = Math.random() > 0.9;
     const isVerified = Math.random() > 0.6;
+
+    // Rastgele Tarih (Son 7 gün içinde)
     const randomTime =
       Date.now() - Math.floor(Math.random() * 7 * 24 * 60 * 60 * 1000);
 
@@ -216,10 +419,13 @@ const generateFakeData = async () => {
       type: randomTemplate.type,
       location: randomLoc,
       desc: randomTemplate.text,
-      tags: [randomTemplate.type, "New", "Viral"],
+      tags: [randomTemplate.type, "New", "Viral", "Verified"],
       createdAt: randomTime,
       followers: Math.floor(Math.random() * 500) / 10 + "K",
-      socials: {},
+      socials: {
+        instagram: randomName.replace(/\s/g, "").toLowerCase(),
+        twitter: randomName.replace(/\s/g, "").toLowerCase() + "_off",
+      },
     };
 
     try {
@@ -229,7 +435,7 @@ const generateFakeData = async () => {
       console.error("Hata:", error);
     }
   }
-  alert(`✅ ${count} yeni ilan eklendi!`);
+  alert(`✅ ${count} yeni ve çeşitli ilan eklendi! Sayfayı yenile.`);
 };
 
 export default function App() {
@@ -461,6 +667,7 @@ export default function App() {
                 >
                   <LogOut className="h-4 w-4" />
                 </button>
+
                 <button
                   onClick={() => {
                     setEditingPost(null);
@@ -796,6 +1003,7 @@ function AuthModal({ mode, setMode, onClose, onSubmit }) {
           onSubmit={(e) => onSubmit(e, email, password)}
           className="space-y-4"
         >
+          {/* ZORLA BEYAZ YAZI */}
           <input
             type="email"
             value={email}
@@ -846,6 +1054,7 @@ function OnboardingModal({ onComplete }) {
           src={data.image}
           className="h-24 w-24 rounded-full mx-auto mb-4 bg-gray-800 border-4 border-gray-800"
         />
+        {/* ZORLA BEYAZ YAZI */}
         <input
           value={data.name}
           onChange={(e) => setData({ ...data, name: e.target.value })}
@@ -895,6 +1104,7 @@ function PostModal({ onClose, onSubmit }) {
               </option>
             ))}
           </select>
+          {/* ZORLA BEYAZ YAZI */}
           <input
             value={formData.location}
             onChange={(e) =>
@@ -904,6 +1114,7 @@ function PostModal({ onClose, onSubmit }) {
             className="w-full bg-gray-950 border border-gray-700 rounded-xl px-4 py-3 text-white text-sm outline-none"
             style={{ color: "white", backgroundColor: "#1f2937" }}
           />
+          {/* ZORLA BEYAZ YAZI */}
           <textarea
             rows="3"
             value={formData.desc}
