@@ -150,8 +150,8 @@ const generateFakeData = async () => {
 
   // 12 Farklı ve Gerçekçi Fotoğraf (Unsplash)
   const AVATARS = [
-    "https://imgur.com/6ZHmleV?auto=format&fit=crop&w=200&q=80",
-    "https://imgur.com/hCLxmjh?auto=format&fit=crop&w=200&q=80",
+    "https://i.imgur.com/6ZHmleV.jpg",
+    "https://i.imgur.com/6ZHmleV.jpg",
   ];
 
   // İlan Metinleri
