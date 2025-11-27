@@ -819,7 +819,6 @@ function AuthModal({ mode, setMode, onClose, onSubmit }) {
           onSubmit={(e) => onSubmit(e, email, password)}
           className="space-y-4"
         >
-          {/* ZORLA BEYAZ YAZI */}
           <input
             type="email"
             value={email}
@@ -870,7 +869,6 @@ function OnboardingModal({ onComplete }) {
           src={data.image}
           className="h-24 w-24 rounded-full mx-auto mb-4 bg-gray-800 border-4 border-gray-800"
         />
-        {/* ZORLA BEYAZ YAZI */}
         <input
           value={data.name}
           onChange={(e) => setData({ ...data, name: e.target.value })}
@@ -920,7 +918,6 @@ function PostModal({ onClose, onSubmit }) {
               </option>
             ))}
           </select>
-          {/* ZORLA BEYAZ YAZI */}
           <input
             value={formData.location}
             onChange={(e) =>
@@ -930,7 +927,6 @@ function PostModal({ onClose, onSubmit }) {
             className="w-full bg-gray-950 border border-gray-700 rounded-xl px-4 py-3 text-white text-sm outline-none"
             style={{ color: "white", backgroundColor: "#1f2937" }}
           />
-          {/* ZORLA BEYAZ YAZI */}
           <textarea
             rows="3"
             value={formData.desc}
