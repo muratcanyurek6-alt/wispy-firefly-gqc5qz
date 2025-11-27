@@ -49,9 +49,10 @@ import {
   TrendingUp,
   Flame,
   Database,
+  LogOut,
 } from "lucide-react";
 
-/* --- FIREBASE AYARLARI --- */
+// --- FIREBASE AYARLARI ---
 const firebaseConfig = {
   apiKey: "AIzaSyAQmTeBxY21B0y51uJVfGCirJIi4xuSeWE",
   authDomain: "linkup-app-6318c.firebaseapp.com",
@@ -64,12 +65,12 @@ const firebaseConfig = {
 
 const apiKey = "";
 
-/* --- SİSTEM BAŞLATILIYOR --- */
+// --- SİSTEM BAŞLATILIYOR ---
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-/* --- KATEGORİLER --- */
+// --- KATEGORİLER ---
 const CATEGORIES = [
   { id: "COLLAB", label: "Collab 🎥", color: "purple" },
   { id: "S4S", label: "S4S / Promo 🔄", color: "pink" },
@@ -79,7 +80,7 @@ const CATEGORIES = [
   { id: "SERVICE", label: "Services 📸", color: "orange" },
 ];
 
-/* --- SAHTE VERİ OLUŞTURUCU --- */
+// --- SAHTE VERİ OLUŞTURUCU ---
 const generateFakeData = async () => {
   const NAMES = [
     "Jessica",
@@ -282,8 +283,10 @@ export default function App() {
   };
 
   const handleLogout = async () => {
-    await signOut(auth);
-    setActiveChat(null);
+    if (window.confirm("Çıkış yapmak istiyor musun?")) {
+      await signOut(auth);
+      setActiveChat(null);
+    }
   };
 
   const handlePostAd = async (formData) => {
@@ -386,12 +389,6 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-gray-900 text-gray-200 font-sans selection:bg-pink-500 selection:text-white pb-20 md:pb-0">
-      {/* Tailwind CSS CDN Fallback */}
-      <link
-        href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
-        rel="stylesheet"
-      />
-
       <nav className="sticky top-0 z-40 bg-gray-900/90 backdrop-blur-xl border-b border-gray-800">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <div
@@ -415,12 +412,21 @@ export default function App() {
                     {user.name}
                   </div>
                 </div>
+                {/* PROFİL FOTOĞRAFI - ARTIK ÇIKIŞ YAPMIYOR */}
                 <img
                   src={user.image}
-                  className="h-9 w-9 rounded-full object-cover border border-gray-600 cursor-pointer"
-                  onClick={handleLogout}
-                  title="Logout"
+                  className="h-9 w-9 rounded-full object-cover border border-gray-600"
+                  title="Profile"
                 />
+                {/* YENİ ÇIKIŞ BUTONU */}
+                <button
+                  onClick={handleLogout}
+                  className="bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white p-2 rounded-full transition-colors"
+                  title="Logout"
+                >
+                  <LogOut className="h-4 w-4" />
+                </button>
+
                 <button
                   onClick={() => {
                     setEditingPost(null);
@@ -756,7 +762,7 @@ function AuthModal({ mode, setMode, onClose, onSubmit }) {
           onSubmit={(e) => onSubmit(e, email, password)}
           className="space-y-4"
         >
-          {/* BURASI DÜZELTİLDİ: style={{ color: 'white', backgroundColor: '#1f2937' }} eklendi */}
+          {/* ZORLA BEYAZ YAZI - ÖZEL STİL */}
           <input
             type="email"
             value={email}
@@ -807,7 +813,7 @@ function OnboardingModal({ onComplete }) {
           src={data.image}
           className="h-24 w-24 rounded-full mx-auto mb-4 bg-gray-800 border-4 border-gray-800"
         />
-        {/* BURASI DÜZELTİLDİ */}
+        {/* ZORLA BEYAZ YAZI */}
         <input
           value={data.name}
           onChange={(e) => setData({ ...data, name: e.target.value })}
@@ -857,7 +863,7 @@ function PostModal({ onClose, onSubmit }) {
               </option>
             ))}
           </select>
-          {/* BURASI DÜZELTİLDİ */}
+          {/* ZORLA BEYAZ YAZI */}
           <input
             value={formData.location}
             onChange={(e) =>
@@ -867,7 +873,7 @@ function PostModal({ onClose, onSubmit }) {
             className="w-full bg-gray-950 border border-gray-700 rounded-xl px-4 py-3 text-white text-sm outline-none"
             style={{ color: "white", backgroundColor: "#1f2937" }}
           />
-          {/* BURASI DÜZELTİLDİ */}
+          {/* ZORLA BEYAZ YAZI */}
           <textarea
             rows="3"
             value={formData.desc}
