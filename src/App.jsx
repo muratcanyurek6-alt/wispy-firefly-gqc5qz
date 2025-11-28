@@ -21,8 +21,6 @@ import {
   deleteDoc,
   doc,
 } from "firebase/firestore";
-// --- 1. STORAGE MODÜLLERİNİ EKLEDİK ---
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import {
   MapPin,
   Users,
@@ -66,7 +64,7 @@ const TailwindCDN = () => (
   />
 );
 
-/* --- CLOUDINARY AYARLARI --- */
+/* --- CLOUDINARY AYARLARI (Senin Bilgilerin) --- */
 const CLOUDINARY_CONFIG = {
   cloudName: "dqoh1mijk",
   uploadPreset: "yxdnini8",
@@ -89,8 +87,6 @@ const apiKey = "";
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-// --- 2. STORAGE BAŞLATMA ---
-const storage = getStorage(app);
 
 /* --- KATEGORİLER --- */
 const CATEGORIES = [
@@ -101,6 +97,30 @@ const CATEGORIES = [
   { id: "HOUSING", label: "Housing 🏠", color: "emerald" },
   { id: "SERVICE", label: "Services 📸", color: "orange" },
 ];
+
+/* --- RESİM YÜKLEME FONKSİYONU (Cloudinary) --- */
+// Bu fonksiyonu global alana ekledik ki her yerden ulaşılsın.
+const uploadImageToCloudinary = async (file) => {
+  if (!file) return null;
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", CLOUDINARY_CONFIG.uploadPreset);
+
+  try {
+    const res = await fetch(
+      `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloudName}/image/upload`,
+      { method: "POST", body: formData }
+    );
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    return data.secure_url;
+  } catch (error) {
+    console.error("Resim yükleme hatası:", error);
+    alert("Resim yüklenemedi. İnternet bağlantınızı kontrol edin.");
+    return null;
+  }
+};
 
 /* --- SAHTE VERİ OLUŞTURUCU --- */
 const generateFakeData = async () => {
@@ -493,7 +513,7 @@ const generateFakeData = async () => {
     "https://t1.pixhost.to/thumbs/10479/665425216_39-3.jpg",
   ];
 
-  // İlan Metinleri (GÜNCELLENDİ)
+  // İlan Metinleri
   const TEMPLATES = [
     {
       type: "COLLAB",
