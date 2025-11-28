@@ -20,6 +20,9 @@ import {
   onSnapshot,
   deleteDoc,
   doc,
+  limit,
+  startAfter,
+  serverTimestamp,
 } from "firebase/firestore";
 import {
   MapPin,
@@ -54,6 +57,8 @@ import {
   LogOut,
   Sun,
   Moon,
+  Menu,
+  UserCog,
 } from "lucide-react";
 
 // --- TASARIM KURTARICI (CDN) ---
@@ -63,6 +68,13 @@ const TailwindCDN = () => (
     rel="stylesheet"
   />
 );
+
+/* --- CLOUDINARY AYARLARI --- */
+// Çalışan ayarları koruyoruz.
+const CLOUDINARY_CONFIG = {
+  cloudName: "dqoh1mijk",
+  uploadPreset: "yxdnini8",
+};
 
 /* --- FIREBASE AYARLARI --- */
 const firebaseConfig = {
@@ -75,7 +87,7 @@ const firebaseConfig = {
   measurementId: "G-QNG54EJ9R5",
 };
 
-const apiKey = ""; // Gemini API Key (Opsiyonel)
+const apiKey = "";
 
 /* --- SİSTEM BAŞLATILIYOR --- */
 const app = initializeApp(firebaseConfig);
@@ -92,45 +104,31 @@ const CATEGORIES = [
   { id: "SERVICE", label: "Services 📸", color: "orange" },
 ];
 
-/* --- RESİM YÜKLEME FONKSİYONU (DÜZELTİLMİŞ HALİ) --- */
+/* --- RESİM YÜKLEME FONKSİYONU --- */
 const uploadImageToCloudinary = async (file) => {
   if (!file) return null;
-
   const formData = new FormData();
   formData.append("file", file);
-  // BURASI KRİTİK: Değişken kullanmıyoruz, direkt yazıyoruz.
-  formData.append("upload_preset", "yxdnini8");
+  formData.append("upload_preset", CLOUDINARY_CONFIG.uploadPreset);
 
   try {
-    console.log("Yükleme başlıyor..."); // Konsola bilgi verelim
-
-    // BURASI DA KRİTİK: Linki de elle yazdık, hata kaçamaz.
     const res = await fetch(
-      "https://api.cloudinary.com/v1_1/dqoh1mjjk/image/upload",
-      {
-        method: "POST",
-        body: formData,
-      }
+      `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloudName}/image/upload`,
+      { method: "POST", body: formData }
     );
-
-    if (!res.ok) {
-      const errorData = await res.text();
-      console.error("Cloudinary Detaylı Hata:", errorData);
-      throw new Error("Yükleme başarısız! Konsola bak.");
-    }
-
     const data = await res.json();
-    console.log("Başarılı! Link:", data.secure_url);
+    if (data.error) throw new Error(data.error.message);
     return data.secure_url;
   } catch (error) {
     console.error("Resim yükleme hatası:", error);
-    alert("Resim yüklenirken hata oluştu. Lütfen F12 Konsolunu kontrol et.");
+    alert("Resim yüklenemedi. Lütfen tekrar deneyin.");
     return null;
   }
 };
 
 /* --- SAHTE VERİ OLUŞTURUCU --- */
 const generateFakeData = async () => {
+  // ... (Listeler aynı kalıyor, yer kaplamasın diye özet geçtim, ama kodda hepsi var)
   const NAMES = [
     "Jessica",
     "Amber",
@@ -520,7 +518,6 @@ const generateFakeData = async () => {
     "https://t1.pixhost.to/thumbs/10479/665425216_39-3.jpg",
   ];
 
-  // İlan Metinleri (GÜNCELLENDİ)
   const TEMPLATES = [
     {
       type: "COLLAB",
@@ -812,13 +809,11 @@ const generateFakeData = async () => {
   ];
 
   let count = 0;
-  // 10 ADET İLAN EKLEME DÖNGÜSÜ
   for (let i = 0; i < 10; i++) {
     const randomName =
       NAMES[Math.floor(Math.random() * NAMES.length)] +
       " " +
       SURNAME_EXT[Math.floor(Math.random() * SURNAME_EXT.length)];
-    // Lokasyonları yeni listeden seç (GÜNCELLENDİ)
     const randomLoc = LOCATIONS[Math.floor(Math.random() * LOCATIONS.length)];
     const randomTemplate =
       TEMPLATES[Math.floor(Math.random() * TEMPLATES.length)];
@@ -827,7 +822,6 @@ const generateFakeData = async () => {
     const isUrgent = Math.random() > 0.9;
     const isVerified = Math.random() > 0.6;
 
-    // Rastgele Tarih (Son 7 gün içinde)
     const randomTime =
       Date.now() - Math.floor(Math.random() * 7 * 24 * 60 * 60 * 1000);
 
@@ -867,14 +861,16 @@ const generateFakeData = async () => {
 // --- SPOTLIGHT BİLEŞENİ ---
 const Spotlight = ({ posts, onProfileClick }) => {
   const scrollRef = React.useRef(null);
+  const [isPaused, setIsPaused] = useState(false);
 
   useEffect(() => {
     const scrollContainer = scrollRef.current;
     if (!scrollContainer) return;
+
     let scrollAmount = 0;
     const scrollStep = 1;
     const scrollInterval = setInterval(() => {
-      if (scrollContainer) {
+      if (scrollContainer && !isPaused) {
         scrollContainer.scrollLeft += scrollStep;
         scrollAmount += scrollStep;
         if (
@@ -885,8 +881,9 @@ const Spotlight = ({ posts, onProfileClick }) => {
         }
       }
     }, 30);
+
     return () => clearInterval(scrollInterval);
-  }, []);
+  }, [isPaused]);
 
   if (posts.length === 0) return null;
 
@@ -902,6 +899,8 @@ const Spotlight = ({ posts, onProfileClick }) => {
         ref={scrollRef}
         className="flex gap-4 overflow-x-auto pb-4 no-scrollbar scroll-smooth"
         style={{ whiteSpace: "nowrap" }}
+        onMouseEnter={() => setIsPaused(true)}
+        onMouseLeave={() => setIsPaused(false)}
       >
         {posts.map((post) => (
           <div
@@ -937,6 +936,80 @@ const Spotlight = ({ posts, onProfileClick }) => {
   );
 };
 
+// --- CHAT MODAL (GERÇEK ZAMANLI) ---
+const ChatModal = ({ activeChat, setActiveChat, user }) => {
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState("");
+  const chatId = [user.uid, activeChat.ownerId].sort().join("_");
+
+  useEffect(() => {
+    if (!chatId) return;
+    const q = query(
+      collection(db, "chats", chatId, "messages"),
+      orderBy("createdAt", "asc")
+    );
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      setMessages(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+    });
+    return () => unsubscribe();
+  }, [chatId]);
+
+  const handleSendMessage = async (e) => {
+    e.preventDefault();
+    if (!newMessage.trim()) return;
+    await addDoc(collection(db, "chats", chatId, "messages"), {
+      text: newMessage,
+      senderId: user.uid,
+      createdAt: serverTimestamp(),
+    });
+    setNewMessage("");
+  };
+
+  return (
+    <div className="fixed bottom-0 right-0 md:right-4 w-full md:w-80 h-[400px] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 md:rounded-t-2xl z-[100] flex flex-col shadow-2xl">
+      <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex justify-between bg-gray-50 dark:bg-gray-950 rounded-t-2xl">
+        <span className="text-gray-900 dark:text-white font-bold">
+          {activeChat.name}
+        </span>
+        <button
+          onClick={() => setActiveChat(null)}
+          className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+        >
+          <X />
+        </button>
+      </div>
+      <div className="flex-1 bg-gray-50 dark:bg-gray-900/90 p-4 overflow-y-auto flex flex-col gap-2">
+        {messages.map((msg) => (
+          <div
+            key={msg.id}
+            className={`p-2 rounded-lg text-sm max-w-[80%] ${
+              msg.senderId === user.uid
+                ? "self-end bg-pink-600 text-white"
+                : "self-start bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-gray-200"
+            }`}
+          >
+            {msg.text}
+          </div>
+        ))}
+      </div>
+      <form
+        onSubmit={handleSendMessage}
+        className="p-3 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex gap-2"
+      >
+        <input
+          value={newMessage}
+          onChange={(e) => setNewMessage(e.target.value)}
+          className="w-full bg-gray-100 dark:bg-gray-950 rounded-full px-4 py-2 text-gray-900 dark:text-white outline-none border border-gray-200 dark:border-gray-800 placeholder:text-gray-400 dark:placeholder:text-gray-600"
+          placeholder="Message..."
+        />
+        <button type="submit" className="text-pink-500 hover:text-pink-600">
+          <Send className="h-5 w-5" />
+        </button>
+      </form>
+    </div>
+  );
+};
+
 export default function App() {
   const [posts, setPosts] = useState([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
@@ -945,6 +1018,7 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [darkMode, setDarkMode] = useState(true);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState("login");
@@ -955,6 +1029,7 @@ export default function App() {
   const [selectedProfile, setSelectedProfile] = useState(null);
   const [activeChat, setActiveChat] = useState(null);
   const [editingPost, setEditingPost] = useState(null);
+  const [lastDoc, setLastDoc] = useState(null);
 
   useEffect(() => {
     if (darkMode) {
@@ -967,27 +1042,16 @@ export default function App() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
-        // Firestore'dan kullanıcı detaylarını çek (bio, socials vs.)
         const userDocRef = doc(db, "users", currentUser.uid);
         const userDocSnap = await getDoc(userDocRef);
-
         if (userDocSnap.exists()) {
           const userData = userDocSnap.data();
           setUser({
             id: currentUser.uid,
             email: currentUser.email,
-            name:
-              userData.displayName || currentUser.displayName || "New Member",
-            image:
-              userData.photoURL ||
-              currentUser.photoURL ||
-              `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser.uid}`,
-            verified: false,
-            bio: userData.bio,
-            socials: userData.socials,
+            ...userData,
           });
         } else {
-          // Eğer Firestore'da kayıt yoksa temel auth bilgileriyle devam et
           setUser({
             id: currentUser.uid,
             email: currentUser.email,
@@ -1006,21 +1070,42 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
+  const fetchPosts = async (isLoadMore = false) => {
+    setLoadingPosts(true);
+    try {
+      let q = query(
+        collection(db, "posts"),
+        orderBy("createdAt", "desc"),
+        limit(20)
+      );
+      if (isLoadMore && lastDoc) {
+        q = query(
+          collection(db, "posts"),
+          orderBy("createdAt", "desc"),
+          startAfter(lastDoc),
+          limit(20)
+        );
+      }
+      const snapshot = await getDocs(q);
+      const newPosts = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
+      if (isLoadMore) {
+        setPosts((prev) => [...prev, ...newPosts]);
+      } else {
+        setPosts(newPosts);
+      }
+    } catch (error) {
+      console.error("Error fetching posts:", error);
+    }
+    setLoadingPosts(false);
+  };
+
   useEffect(() => {
-    const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        const livePosts = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        setPosts(livePosts);
-        setLoadingPosts(false);
-      },
-      () => setLoadingPosts(false)
-    );
-    return () => unsubscribe();
+    fetchPosts();
   }, []);
 
   const handleAuthSubmit = async (e, email, password) => {
@@ -1041,26 +1126,26 @@ export default function App() {
 
   const handleCompleteOnboarding = async (profileData) => {
     if (auth.currentUser) {
-      // 1. Auth Profilini Güncelle
       await updateProfile(auth.currentUser, {
         displayName: profileData.name,
         photoURL: profileData.image,
       });
-
-      // 2. Firestore'a Detaylı Bilgileri Kaydet
-      await setDoc(doc(db, "users", auth.currentUser.uid), {
-        displayName: profileData.name,
-        photoURL: profileData.image,
-        bio: profileData.bio,
-        socials: {
-          instagram: profileData.instagram,
-          twitter: profileData.twitter,
-          onlyfans: profileData.onlyfans,
+      await setDoc(
+        doc(db, "users", auth.currentUser.uid),
+        {
+          displayName: profileData.name,
+          photoURL: profileData.image,
+          bio: profileData.bio,
+          socials: {
+            instagram: profileData.instagram,
+            twitter: profileData.twitter,
+            onlyfans: profileData.onlyfans,
+          },
+          email: auth.currentUser.email,
+          uid: auth.currentUser.uid,
         },
-        email: auth.currentUser.email,
-        uid: auth.currentUser.uid,
-      });
-
+        { merge: true }
+      ); // Merge true to update existing doc if editing
       window.location.reload();
     }
     setShowOnboarding(false);
@@ -1092,11 +1177,12 @@ export default function App() {
         tags: ["New", formData.type],
         createdAt: Date.now(),
         followers: "New",
-        socials: user.socials || {}, // Kullanıcının sosyal medya bilgilerini ilana ekle
+        socials: user.socials || {},
       };
       await addDoc(collection(db, "posts"), postData);
       setShowPostModal(false);
       setEditingPost(null);
+      fetchPosts(); // Refresh list
     } catch (error) {
       alert("İlan gönderilemedi.");
     }
@@ -1106,6 +1192,7 @@ export default function App() {
     if (window.confirm("İlanı silmek istiyor musunuz?")) {
       try {
         await deleteDoc(doc(db, "posts", postId));
+        setPosts(posts.filter((p) => p.id !== postId));
       } catch (error) {
         console.error("Silme hatası:", error);
       }
@@ -1201,46 +1288,136 @@ export default function App() {
                 <Moon className="h-5 w-5" />
               )}
             </button>
-            {user ? (
-              <div className="flex items-center gap-3">
-                <div className="hidden md:block text-right">
-                  <div className="text-xs text-gray-500 dark:text-gray-400">
-                    Hi,
+
+            {/* MOBILE MENU BUTTON */}
+            <button
+              className="md:hidden p-2 text-gray-600 dark:text-gray-300"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            >
+              <Menu className="h-6 w-6" />
+            </button>
+
+            {/* DESKTOP USER ACTIONS */}
+            <div className="hidden md:flex items-center gap-3">
+              {user ? (
+                <>
+                  <div className="text-right">
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                      Hi,
+                    </div>
+                    <div className="text-sm font-bold text-gray-900 dark:text-white max-w-[100px] truncate">
+                      {user.name}
+                    </div>
                   </div>
-                  <div className="text-sm font-bold text-gray-900 dark:text-white max-w-[100px] truncate">
-                    {user.name}
+                  <img
+                    src={user.image}
+                    className="h-9 w-9 rounded-full object-cover border border-gray-300 dark:border-gray-600"
+                    title="Profile"
+                  />
+                  <button
+                    onClick={() => {
+                      setShowOnboarding(true);
+                    }}
+                    className="bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 p-2 rounded-full transition-colors"
+                    title="Edit Profile"
+                  >
+                    <UserCog className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white p-2 rounded-full transition-colors"
+                    title="Logout"
+                  >
+                    <LogOut className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEditingPost(null);
+                      setShowPostModal(true);
+                    }}
+                    className="bg-white dark:bg-white hover:bg-gray-100 text-gray-900 px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 transition-transform hover:scale-105 border border-gray-200 dark:border-transparent shadow-sm"
+                  >
+                    <PlusSquare className="h-4 w-4" /> Post Ad
+                  </button>
+                </>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      setAuthMode("login");
+                      setShowAuthModal(true);
+                    }}
+                    className="text-sm font-bold text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white px-3 py-2"
+                  >
+                    Login
+                  </button>
+                  <button
+                    onClick={() => {
+                      setAuthMode("signup");
+                      setShowAuthModal(true);
+                    }}
+                    className="bg-pink-600 hover:bg-pink-700 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg shadow-pink-600/20"
+                  >
+                    Sign Up
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* MOBILE MENU DROPDOWN */}
+        {isMenuOpen && (
+          <div className="md:hidden bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 p-4 flex flex-col gap-3">
+            {user ? (
+              <>
+                <div className="flex items-center gap-3 mb-2">
+                  <img
+                    src={user.image}
+                    className="h-10 w-10 rounded-full object-cover"
+                  />
+                  <div>
+                    <div className="font-bold text-gray-900 dark:text-white">
+                      {user.name}
+                    </div>
+                    <div className="text-xs text-gray-500">{user.email}</div>
                   </div>
                 </div>
-                <img
-                  src={user.image}
-                  className="h-9 w-9 rounded-full object-cover border border-gray-300 dark:border-gray-600"
-                  title="Profile"
-                />
                 <button
-                  onClick={handleLogout}
-                  className="bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white p-2 rounded-full transition-colors"
-                  title="Logout"
+                  onClick={() => {
+                    setShowOnboarding(true);
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full text-left py-2 px-4 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 flex items-center gap-2"
                 >
-                  <LogOut className="h-4 w-4" />
+                  <UserCog className="h-4 w-4" /> Edit Profile
                 </button>
                 <button
                   onClick={() => {
                     setEditingPost(null);
                     setShowPostModal(true);
+                    setIsMenuOpen(false);
                   }}
-                  className="hidden md:flex bg-white dark:bg-white hover:bg-gray-100 text-gray-900 px-4 py-2 rounded-full text-sm font-bold items-center gap-2 transition-transform hover:scale-105 border border-gray-200 dark:border-transparent shadow-sm"
+                  className="w-full text-left py-2 px-4 rounded-lg bg-pink-600 text-white font-bold flex items-center gap-2"
                 >
                   <PlusSquare className="h-4 w-4" /> Post Ad
                 </button>
-              </div>
+                <button
+                  onClick={handleLogout}
+                  className="w-full text-left py-2 px-4 rounded-lg hover:bg-red-500/10 text-red-500 flex items-center gap-2"
+                >
+                  <LogOut className="h-4 w-4" /> Logout
+                </button>
+              </>
             ) : (
-              <div className="flex items-center gap-2">
+              <>
                 <button
                   onClick={() => {
                     setAuthMode("login");
                     setShowAuthModal(true);
+                    setIsMenuOpen(false);
                   }}
-                  className="text-sm font-bold text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white px-3 py-2"
+                  className="w-full py-2 px-4 rounded-lg bg-gray-100 dark:bg-gray-800 text-center font-bold text-gray-700 dark:text-white"
                 >
                   Login
                 </button>
@@ -1248,15 +1425,16 @@ export default function App() {
                   onClick={() => {
                     setAuthMode("signup");
                     setShowAuthModal(true);
+                    setIsMenuOpen(false);
                   }}
-                  className="bg-pink-600 hover:bg-pink-700 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg shadow-pink-600/20"
+                  className="w-full py-2 px-4 rounded-lg bg-pink-600 text-center font-bold text-white"
                 >
                   Sign Up
                 </button>
-              </div>
+              </>
             )}
           </div>
-        </div>
+        )}
       </nav>
 
       <div className="relative bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 transition-colors duration-300">
@@ -1310,7 +1488,7 @@ export default function App() {
       </div>
 
       <main className="max-w-6xl mx-auto px-4 py-6">
-        {loadingPosts ? (
+        {loadingPosts && posts.length === 0 ? (
           <div className="text-center py-20 text-gray-500">Loading...</div>
         ) : filteredPosts.length === 0 ? (
           <div className="text-center py-20 border border-dashed border-gray-300 dark:border-gray-800 rounded-2xl">
@@ -1325,94 +1503,108 @@ export default function App() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filteredPosts.map((post) => (
-              <div
-                key={post.id}
-                onClick={() => requireAuth(() => setSelectedProfile(post))}
-                className={`relative bg-white dark:bg-gray-900 rounded-2xl p-5 border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer flex flex-col group ${
-                  post.boosted
-                    ? "border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.1)]"
-                    : "border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700"
-                }`}
-              >
-                {user && user.id === post.ownerId && (
-                  <div className="absolute top-4 right-4 flex gap-2 z-20">
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {filteredPosts.map((post) => (
+                <div
+                  key={post.id}
+                  onClick={() => requireAuth(() => setSelectedProfile(post))}
+                  className={`relative bg-white dark:bg-gray-900 rounded-2xl p-5 border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer flex flex-col group ${
+                    post.boosted
+                      ? "border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.1)]"
+                      : "border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700"
+                  }`}
+                >
+                  {user && user.id === post.ownerId && (
+                    <div className="absolute top-4 right-4 flex gap-2 z-20">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(post.id);
+                        }}
+                        className="p-1.5 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-red-500 rounded border border-gray-200 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  )}
+                  <div className="absolute -top-3 left-5 flex gap-2">
+                    {post.boosted && (
+                      <div className="bg-yellow-500 text-black text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">
+                        <Zap className="h-3 w-3 fill-black" /> PROMOTED
+                      </div>
+                    )}
+                    {post.urgent && (
+                      <div className="bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1 animate-pulse">
+                        <Flame className="h-3 w-3 fill-white" /> URGENT
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3 mb-4 mt-2">
+                    <img
+                      src={post.image}
+                      className={`h-11 w-11 rounded-full object-cover border-2 ${
+                        post.boosted
+                          ? "border-yellow-500"
+                          : "border-gray-200 dark:border-gray-700"
+                      }`}
+                    />
+                    <div>
+                      <h3
+                        className={`font-bold text-sm flex items-center gap-1 ${
+                          post.boosted
+                            ? "text-yellow-600 dark:text-yellow-500"
+                            : "text-gray-900 dark:text-white"
+                        }`}
+                      >
+                        {post.name}{" "}
+                        {post.verified && (
+                          <CheckCircle className="h-3.5 w-3.5 text-blue-500" />
+                        )}
+                      </h3>
+                      <div className="flex items-center gap-1 text-xs text-gray-500">
+                        <MapPin className="h-3 w-3" /> {post.location}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mb-3">
+                    <span className="text-[10px] font-bold px-2 py-1 rounded border bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300">
+                      {CATEGORIES.find((c) => c.id === post.type)?.label}
+                    </span>
+                  </div>
+                  <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed mb-4 flex-grow line-clamp-3">
+                    {post.desc}
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 pt-4 border-t border-gray-100 dark:border-gray-800 mt-auto">
+                    <button className="bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-white py-2 rounded-lg text-xs font-bold transition-colors">
+                      View Profile
+                    </button>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleDelete(post.id);
+                        requireAuth(() =>
+                          setActiveChat({ ...post, ownerId: post.ownerId })
+                        );
                       }}
-                      className="p-1.5 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-red-500 rounded border border-gray-200 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700"
+                      className="bg-pink-600 hover:bg-pink-700 text-white py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 shadow-lg shadow-pink-600/20"
                     >
-                      <Trash2 className="h-3 w-3" />
+                      <MessageCircle className="h-3.5 w-3.5" /> Message
                     </button>
                   </div>
-                )}
-                <div className="absolute -top-3 left-5 flex gap-2">
-                  {post.boosted && (
-                    <div className="bg-yellow-500 text-black text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">
-                      <Zap className="h-3 w-3 fill-black" /> PROMOTED
-                    </div>
-                  )}
-                  {post.urgent && (
-                    <div className="bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1 animate-pulse">
-                      <Flame className="h-3 w-3 fill-white" /> URGENT
-                    </div>
-                  )}
                 </div>
-                <div className="flex items-center gap-3 mb-4 mt-2">
-                  <img
-                    src={post.image}
-                    className={`h-11 w-11 rounded-full object-cover border-2 ${
-                      post.boosted
-                        ? "border-yellow-500"
-                        : "border-gray-200 dark:border-gray-700"
-                    }`}
-                  />
-                  <div>
-                    <h3
-                      className={`font-bold text-sm flex items-center gap-1 ${
-                        post.boosted
-                          ? "text-yellow-600 dark:text-yellow-500"
-                          : "text-gray-900 dark:text-white"
-                      }`}
-                    >
-                      {post.name}{" "}
-                      {post.verified && (
-                        <CheckCircle className="h-3.5 w-3.5 text-blue-500" />
-                      )}
-                    </h3>
-                    <div className="flex items-center gap-1 text-xs text-gray-500">
-                      <MapPin className="h-3 w-3" /> {post.location}
-                    </div>
-                  </div>
-                </div>
-                <div className="mb-3">
-                  <span className="text-[10px] font-bold px-2 py-1 rounded border bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300">
-                    {CATEGORIES.find((c) => c.id === post.type)?.label}
-                  </span>
-                </div>
-                <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed mb-4 flex-grow line-clamp-3">
-                  {post.desc}
-                </p>
-                <div className="grid grid-cols-2 gap-2 pt-4 border-t border-gray-100 dark:border-gray-800 mt-auto">
-                  <button className="bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-white py-2 rounded-lg text-xs font-bold transition-colors">
-                    View Profile
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      requireAuth(() => setActiveChat(post));
-                    }}
-                    className="bg-pink-600 hover:bg-pink-700 text-white py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 shadow-lg shadow-pink-600/20"
-                  >
-                    <MessageCircle className="h-3.5 w-3.5" /> Message
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+            {/* PAGINATION BUTTON */}
+            <div className="mt-8 text-center">
+              <button
+                onClick={() => fetchPosts(true)}
+                disabled={loadingPosts}
+                className="px-6 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-sm font-bold text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+              >
+                {loadingPosts ? "Loading..." : "Load More"}
+              </button>
+            </div>
+          </>
         )}
       </main>
 
@@ -1438,6 +1630,7 @@ export default function App() {
         <OnboardingModal
           onComplete={handleCompleteOnboarding}
           generateBio={generateBioWithGemini}
+          initialData={user} // MEVCUT VERİYİ GÖNDERİYORUZ
         />
       )}
 
@@ -1448,6 +1641,7 @@ export default function App() {
           initialData={editingPost}
         />
       )}
+
       {selectedProfile && (
         <div className="fixed inset-0 bg-black/50 dark:bg-black/90 backdrop-blur-sm z-[70] flex items-center justify-center p-4 transition-colors">
           <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl w-full max-w-sm relative p-6 shadow-2xl">
@@ -1509,37 +1703,28 @@ export default function App() {
                   </a>
                 )}
               </div>
-              <button className="w-full bg-pink-600 text-white py-3 rounded-xl font-bold shadow-lg">
+              <button
+                onClick={() => {
+                  setSelectedProfile(null);
+                  setActiveChat(selectedProfile);
+                }}
+                className="w-full bg-pink-600 text-white py-3 rounded-xl font-bold shadow-lg"
+              >
                 Message
               </button>
             </div>
           </div>
         </div>
       )}
+
       {activeChat && (
-        <div className="fixed bottom-0 right-0 md:right-4 w-full md:w-80 h-[400px] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 md:rounded-t-2xl z-[100] flex flex-col shadow-2xl">
-          <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex justify-between bg-gray-50 dark:bg-gray-950 rounded-t-2xl">
-            <span className="text-gray-900 dark:text-white font-bold">
-              {activeChat.name}
-            </span>
-            <button
-              onClick={() => setActiveChat(null)}
-              className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-            >
-              <X />
-            </button>
-          </div>
-          <div className="flex-1 bg-gray-50 dark:bg-gray-900/90 p-4 text-center text-gray-500">
-            Start chatting...
-          </div>
-          <div className="p-3 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
-            <input
-              className="w-full bg-gray-100 dark:bg-gray-950 rounded-full px-4 py-2 text-gray-900 dark:text-white outline-none border border-gray-200 dark:border-gray-800 placeholder:text-gray-400 dark:placeholder:text-gray-600"
-              placeholder="Message..."
-            />
-          </div>
-        </div>
+        <ChatModal
+          activeChat={activeChat}
+          setActiveChat={setActiveChat}
+          user={user}
+        />
       )}
+
       {showPremiumModal && (
         <div className="fixed inset-0 bg-black/50 dark:bg-black/90 flex items-center justify-center backdrop-blur-sm">
           <div className="bg-white dark:bg-gray-900 p-8 rounded-2xl border border-gray-200 dark:border-gray-800 text-center shadow-2xl">
@@ -1617,21 +1802,21 @@ function AuthModal({ mode, setMode, onClose, onSubmit }) {
   );
 }
 
-function OnboardingModal({ onComplete }) {
-  // Yeni State'ler
-  const [data, setData] = useState({
-    name: "",
-    image: `https://api.dicebear.com/7.x/avataaars/svg?seed=${Math.floor(
-      Math.random() * 1000
-    )}`,
-    bio: "",
-    instagram: "",
-    twitter: "",
-    onlyfans: "",
-  });
+function OnboardingModal({ onComplete, initialData }) {
+  const [data, setData] = useState(
+    initialData || {
+      name: "",
+      image: `https://api.dicebear.com/7.x/avataaars/svg?seed=${Math.floor(
+        Math.random() * 1000
+      )}`,
+      bio: "",
+      instagram: "",
+      twitter: "",
+      onlyfans: "",
+    }
+  );
   const [uploading, setUploading] = useState(false);
 
-  // Cloudinary Yükleme
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -1647,10 +1832,9 @@ function OnboardingModal({ onComplete }) {
     <div className="fixed inset-0 bg-black/95 z-[80] flex items-center justify-center p-4">
       <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl w-full max-w-md p-8 text-center shadow-2xl max-h-[90vh] overflow-y-auto">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-          Setup Profile
+          {initialData ? "Edit Profile" : "Setup Profile"}
         </h2>
 
-        {/* FOTOĞRAF YÜKLEME ALANI */}
         <div className="relative w-24 h-24 mx-auto mb-4 group">
           <img
             src={data.image}
@@ -1698,7 +1882,7 @@ function OnboardingModal({ onComplete }) {
               maxLength={500}
             />
             <div className="text-right text-[10px] text-gray-400">
-              {data.bio.length}/500
+              {data.bio?.length || 0}/500
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -1746,7 +1930,7 @@ function OnboardingModal({ onComplete }) {
           onClick={() => onComplete(data)}
           className="w-full bg-pink-600 text-white font-bold py-3.5 rounded-xl shadow-lg mt-6"
         >
-          Complete Profile
+          {initialData ? "Update Profile" : "Complete Profile"}
         </button>
       </div>
     </div>
