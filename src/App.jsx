@@ -106,7 +106,7 @@ const uploadImageToCloudinary = async (file) => {
 
     // BURASI DA KRİTİK: Linki de elle yazdık, hata kaçamaz.
     const res = await fetch(
-      "https://api.cloudinary.com/v1_1/dqoh1mijk/image/upload",
+      "https://api.cloudinary.com/v1_1/dqoh1mjjk/image/upload",
       {
         method: "POST",
         body: formData,
