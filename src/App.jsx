@@ -53,7 +53,7 @@ import {
   Database,
   LogOut,
   Sun,
-  Moon,
+  Moon, // <-- EKSİK OLAN İKONLAR EKLENDİ
 } from "lucide-react";
 
 // --- TASARIM KURTARICI (CDN) ---
@@ -99,7 +99,7 @@ const CATEGORIES = [
 ];
 
 /* --- RESİM YÜKLEME FONKSİYONU (Cloudinary) --- */
-// Bu fonksiyonu global alana ekledik ki her yerden ulaşılsın.
+// Bu fonksiyon artık global scope'da, yani her yerden erişilebilir.
 const uploadImageToCloudinary = async (file) => {
   if (!file) return null;
 
@@ -117,7 +117,9 @@ const uploadImageToCloudinary = async (file) => {
     return data.secure_url;
   } catch (error) {
     console.error("Resim yükleme hatası:", error);
-    alert("Resim yüklenemedi. İnternet bağlantınızı kontrol edin.");
+    alert(
+      "Resim yüklenemedi. İnternet bağlantınızı kontrol edin veya dosya boyutunu küçültün."
+    );
     return null;
   }
 };
@@ -513,7 +515,7 @@ const generateFakeData = async () => {
     "https://t1.pixhost.to/thumbs/10479/665425216_39-3.jpg",
   ];
 
-  // İlan Metinleri
+  // İlan Metinleri (GÜNCELLENDİ)
   const TEMPLATES = [
     {
       type: "COLLAB",
