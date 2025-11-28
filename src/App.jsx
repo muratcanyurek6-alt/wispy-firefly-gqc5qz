@@ -72,7 +72,7 @@ const TailwindCDN = () => (
 /* --- CLOUDINARY AYARLARI --- */
 // Çalışan ayarları koruyoruz.
 const CLOUDINARY_CONFIG = {
-  cloudName: "dqoh1mijk",
+  cloudName: "dqoh1mjjk",
   uploadPreset: "yxdnini8",
 };
 
