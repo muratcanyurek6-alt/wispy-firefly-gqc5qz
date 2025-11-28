@@ -53,7 +53,7 @@ import {
   Database,
   LogOut,
   Sun,
-  Moon, // <-- EKSİK OLAN İKONLAR EKLENDİ
+  Moon,
 } from "lucide-react";
 
 // --- TASARIM KURTARICI (CDN) ---
@@ -63,12 +63,6 @@ const TailwindCDN = () => (
     rel="stylesheet"
   />
 );
-
-/* --- CLOUDINARY AYARLARI (Senin Bilgilerin) --- */
-const CLOUDINARY_CONFIG = {
-  cloudName: "dqoh1mijk",
-  uploadPreset: "yxdnini8",
-};
 
 /* --- FIREBASE AYARLARI --- */
 const firebaseConfig = {
@@ -81,7 +75,7 @@ const firebaseConfig = {
   measurementId: "G-QNG54EJ9R5",
 };
 
-const apiKey = "";
+const apiKey = ""; // Gemini API Key (Opsiyonel)
 
 /* --- SİSTEM BAŞLATILIYOR --- */
 const app = initializeApp(firebaseConfig);
@@ -98,28 +92,39 @@ const CATEGORIES = [
   { id: "SERVICE", label: "Services 📸", color: "orange" },
 ];
 
-/* --- RESİM YÜKLEME FONKSİYONU (Cloudinary) --- */
-// Bu fonksiyon artık global scope'da, yani her yerden erişilebilir.
+/* --- RESİM YÜKLEME FONKSİYONU (DÜZELTİLMİŞ HALİ) --- */
 const uploadImageToCloudinary = async (file) => {
   if (!file) return null;
 
   const formData = new FormData();
   formData.append("file", file);
-  formData.append("upload_preset", CLOUDINARY_CONFIG.uploadPreset);
+  // BURASI KRİTİK: Değişken kullanmıyoruz, direkt yazıyoruz.
+  formData.append("upload_preset", "yxdnini8");
 
   try {
+    console.log("Yükleme başlıyor..."); // Konsola bilgi verelim
+
+    // BURASI DA KRİTİK: Linki de elle yazdık, hata kaçamaz.
     const res = await fetch(
-      `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloudName}/image/upload`,
-      { method: "POST", body: formData }
+      "https://api.cloudinary.com/v1_1/dqoh1mijk/image/upload",
+      {
+        method: "POST",
+        body: formData,
+      }
     );
+
+    if (!res.ok) {
+      const errorData = await res.text();
+      console.error("Cloudinary Detaylı Hata:", errorData);
+      throw new Error("Yükleme başarısız! Konsola bak.");
+    }
+
     const data = await res.json();
-    if (data.error) throw new Error(data.error.message);
+    console.log("Başarılı! Link:", data.secure_url);
     return data.secure_url;
   } catch (error) {
     console.error("Resim yükleme hatası:", error);
-    alert(
-      "Resim yüklenemedi. İnternet bağlantınızı kontrol edin veya dosya boyutunu küçültün."
-    );
+    alert("Resim yüklenirken hata oluştu. Lütfen F12 Konsolunu kontrol et.");
     return null;
   }
 };
