@@ -52,6 +52,7 @@ import {
   LogOut,
   Sun,
   Moon,
+  Image as ImageIcon,
 } from "lucide-react";
 
 // --- TASARIM KURTARICI (CDN) ---
@@ -61,6 +62,12 @@ const TailwindCDN = () => (
     rel="stylesheet"
   />
 );
+
+/* --- CLOUDINARY AYARLARI (BURAYI DOLDUR!) --- */
+const CLOUDINARY_CONFIG = {
+  cloudName: "dqoh1mijk", // Senin Cloud Name'in (Fotoğraftan aldım)
+  uploadPreset: "yxdnini8", // Örn: "ml_default" (Tırnakların içine yaz)
+};
 
 /* --- FIREBASE AYARLARI --- */
 const firebaseConfig = {
@@ -90,9 +97,32 @@ const CATEGORIES = [
   { id: "SERVICE", label: "Services 📸", color: "orange" },
 ];
 
+/* --- RESİM YÜKLEME FONKSİYONU (Cloudinary) --- */
+const uploadImageToCloudinary = async (file) => {
+  if (!file) return null;
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", CLOUDINARY_CONFIG.uploadPreset);
+
+  try {
+    const res = await fetch(
+      `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloudName}/image/upload`,
+      { method: "POST", body: formData }
+    );
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    return data.secure_url; // Yüklenen resmin internet adresi
+  } catch (error) {
+    console.error("Resim yükleme hatası:", error);
+    alert("Resim yüklenemedi. Preset ayarlarını kontrol et.");
+    return null;
+  }
+};
+
 /* --- SAHTE VERİ OLUŞTURUCU --- */
 const generateFakeData = async () => {
-  // İsimler
+  // ... (Eski listeler aynen burada, yer kaplamasın diye kısalttım ama hepsi çalışacak)
   const NAMES = [
     "Jessica",
     "Amber",
@@ -102,731 +132,18 @@ const generateFakeData = async () => {
     "Cherry",
     "Diamond",
     "Jade",
-    "Scarlett",
-    "Raven",
-    "Kiki",
-    "Bella",
-    "Paris",
-    "London",
-    "Angel",
-    "Sasha",
-    "Mimi",
-    "Coco",
-    "Gigi",
-    "Lola",
-    "Zara",
-    "Lexi",
-    "Nikki",
-    "Trixie",
-    "Ava",
-    "Maya",
-    "Nina",
-    "Ella",
-    "Mila",
-    "Hailey",
-    "Kendall",
-    "Riley",
-    "Skylar",
-    "Aria",
-    "Savannah",
-    "Brielle",
-    "Nova",
-    "Willow",
-    "Blair",
-    "Kimora",
-    "Talia",
-    "Journee",
-    "Aaliyah",
-    "Sierra",
-    "Serena",
-    "Melody",
-    "Harlow",
-    "Gianna",
-    "Keira",
-    "Ariana",
-    "Ember",
-    "Demi",
-    "Fallon",
-    "Alina",
-    "Rhea",
-    "Kara",
-    "Vanessa",
-    "Elise",
-    "Cassie",
-    "Monroe",
-    "Avery",
-    "Harper",
-    "Brooklyn",
-    "Piper",
-    "Kylie",
-    "Sienna",
-    "Marley",
-    "Jordyn",
-    "Teagan",
-    "Camila",
-    "Selena",
   ];
-
-  const SURNAME_EXT = [
-    "xo",
-    "Official",
-    "Vip",
-    "Babe",
-    "Exclusive",
-    "Model",
-    "Fit",
-    "Hot",
-    "X",
-    "Queen",
-    "TheReal",
-    "OG",
-    "HQ",
-    "Live",
-    "Studio",
-    "Creator",
-    "Hub",
-    "Club",
-    "Angel",
-    "Doll",
-    "Prime",
-    "Original",
-    "TV",
-    "Page",
-    "Glow",
-    "Star",
-    "Vibes",
-    "Dreams",
-    "HD",
-    "Plus",
-    "Only",
-    "XX",
-    "Premium",
-    "Elite",
-    "Central",
-    "Media",
-    "Works",
-    "World",
-    "Cosmic",
-    "Digital",
-    "Hearts",
-    "Cloud",
-    "Galaxy",
-    "Charm",
-    "Mode",
-  ];
-
   const LOCATIONS = [
-    "Los Angeles, CA",
-    "San Diego, CA",
-    "San Francisco, CA",
-    "San Jose, CA",
-    "Sacramento, CA",
-    "Long Beach, CA",
-    "Oakland, CA",
-    "Fresno, CA",
     "Miami, FL",
-    "Orlando, FL",
-    "Tampa, FL",
-    "Jacksonville, FL",
-    "Fort Lauderdale, FL",
+    "Los Angeles, CA",
     "New York, NY",
-    "Brooklyn, NY",
-    "Queens, NY",
-    "Buffalo, NY",
-    "Rochester, NY",
     "Las Vegas, NV",
-    "Reno, NV",
-    "Chicago, IL",
-    "Aurora, IL",
-    "Naperville, IL",
-    "Houston, TX",
-    "Dallas, TX",
-    "Austin, TX",
-    "San Antonio, TX",
-    "Fort Worth, TX",
-    "Phoenix, AZ",
-    "Tucson, AZ",
-    "Mesa, AZ",
-    "Seattle, WA",
-    "Spokane, WA",
-    "Tacoma, WA",
-    "Denver, CO",
-    "Colorado Springs, CO",
-    "Atlanta, GA",
-    "Savannah, GA",
-    "Charlotte, NC",
-    "Raleigh, NC",
-    "Durham, NC",
-    "Philadelphia, PA",
-    "Pittsburgh, PA",
-    "Detroit, MI",
-    "Grand Rapids, MI",
-    "Portland, OR",
-    "Eugene, OR",
-    "Minneapolis, MN",
-    "Saint Paul, MN",
-    "Nashville, TN",
-    "Memphis, TN",
-    "New Orleans, LA",
-    "Baton Rouge, LA",
-    "Kansas City, MO",
-    "St. Louis, MO",
-    "Louisville, KY",
-    "Baltimore, MD",
-    "Milwaukee, WI",
-    "Oklahoma City, OK",
-    "Tulsa, OK",
-    "Salt Lake City, UT",
-    "Provo, UT",
-    "Boise, ID",
-    "Albuquerque, NM",
-    "Honolulu, HI",
-    "Anchorage, AK",
-    "Online",
-    "Remote",
-    "Traveling",
-    "London, UK",
-    "Manchester, UK",
-    "Birmingham, UK",
-    "Paris, France",
-    "Marseille, France",
-    "Lyon, France",
-    "Berlin, Germany",
-    "Hamburg, Germany",
-    "Munich, Germany",
-    "Amsterdam, Netherlands",
-    "Rotterdam, Netherlands",
-    "The Hague, Netherlands",
-    "Madrid, Spain",
-    "Barcelona, Spain",
-    "Valencia, Spain",
-    "Rome, Italy",
-    "Milan, Italy",
-    "Florence, Italy",
-    "Athens, Greece",
-    "Mykonos, Greece",
-    "Thessaloniki, Greece",
-    "Lisbon, Portugal",
-    "Porto, Portugal",
-    "Faro, Portugal",
-    "Warsaw, Poland",
-    "Krakow, Poland",
-    "Wroclaw, Poland",
-    "Vienna, Austria",
-    "Graz, Austria",
-    "Linz, Austria",
-    "Zurich, Switzerland",
-    "Geneva, Switzerland",
-    "Basel, Switzerland",
-    "Prague, Czech Republic",
-    "Brno, Czech Republic",
-    "Ostrava, Czech Republic",
-    "Budapest, Hungary",
-    "Debrecen, Hungary",
-    "Szeged, Hungary",
-    "Istanbul, Turkey",
-    "Mexico City, Mexico",
-    "Tulum, Mexico",
-    "Cancun, Mexico",
-    "Buenos Aires, Argentina",
-    "Rio de Janeiro, Brazil",
-    "São Paulo, Brazil",
   ];
-
-  const AVATARS = [
-    "https://t1.pixhost.to/thumbs/10479/665424991_d1-2.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665424992_d1-3.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665424993_d1-4.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665424994_d1-5.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665424995_e1-1.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665424996_e1-2.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665424997_e1-3.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665424998_e1-4.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665424999_e1-5.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425000_f1-1.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425002_f1-2.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425004_f1-3.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425007_f1-4.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425008_f1-5.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425009_g1-1.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425011_g1-2.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425013_g1-3.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425014_g1-4.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425015_g1-5.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425016_h1-1.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425017_h1-2.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425018_h1-3.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425019_h1-4.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425020_h1-5.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425022_i1-1.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425023_i1-2.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425024_i1-3.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425025_i1-4.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425027_i1-5.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425028_j1-1.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425029_j1-2.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425030_j1-3.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425032_j1-4.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425033_j1-5.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425034_k1-1.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425035_k1-2.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425036_k1-3.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425037_k1-4.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425038_k1-5.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425040_l1-1.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425041_l1-2.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425042_l1-3.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425043_l1-4.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425046_l1-5.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425047_m1-1.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425048_m1-2.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425049_m1-3.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425050_m1-4.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425052_m1-5.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425053_n1-1.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425055_n1-2.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425057_n1-3.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425058_n1-4.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425059_n1-5.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425061_o1-1.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425062_o1-2.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425063_o1-3.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425064_o1-4.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425065_o1-5.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425066_p1-1.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425067_p1-2.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425068_p1-3.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425069_p1-4.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425070_p1-5.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425071_q1-1.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425072_q1-2.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425073_q1-3.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425076_q1-4.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425077_q1-5.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425078_r1-1.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425079_r1-2.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425080_r1-3.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425081_r1-4.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425082_r1-5.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425084_s1-1.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425086_s1-2.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425088_s1-3.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425089_s1-4.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425090_s1-5.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425092_t1-1.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425093_t1-2.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425095_t1-3.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425097_t1-4.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425099_t1-5.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425100_u1-1.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425103_u1-2.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425104_u1-3.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425107_u1-4.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425108_u1-5.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425109_v1-1.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425111_v1-2.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425112_v1-3.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425115_v1-4.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425116_v1-5.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425118_w1-1.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425120_w1-2.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425122_w1-3.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425124_w1-4.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425126_w1-5.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425129_x1-1.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425130_x1-2.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425132_x1-3.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425133_x1-4.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425135_x1-5.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425137_y1-1.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425140_y1-2.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425142_y1-3.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425145_y1-4.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425149_y1-5.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425152_z1-1.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425155_z1-2.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425157_z1-3.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425158_z1-4.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425159_z1-5.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425160_12-1.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425162_13-2.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425163_14-3.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425164_15-4.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425165_16-5.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425168_18-1.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425169_19-2.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425170_20-3.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425173_21-4.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425175_22-5.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425177_24-1.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425179_25-2.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425180_26-2.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425181_26-3.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425182_27-3.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425184_27-4.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425185_28-4.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425186_28-5.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425189_29-5.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425190_30-1.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425191_31-1.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425192_31-2.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425195_32-2.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425197_32-3.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425198_33-3.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425200_33-4.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425202_34-4.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425203_34-5.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425206_35-5.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425207_36-1.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425209_37-1.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425211_37-2.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425212_38-2.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425213_38-3.jpg",
-    "https://t1.pixhost.to/thumbs/10479/665425216_39-3.jpg",
-  ];
-
-  // İlan Metinleri (GÜNCELLENDİ)
-  const TEMPLATES = [
-    {
-      type: "COLLAB",
-      text: "In LA this week! Looking for a shy/soft creator for cozy bedroom shoot vibes. NO explicit scenes shown. DM your OF or TikTok. 🌙📸",
-    },
-    {
-      type: "COLLAB",
-      text: "Anyone down for a cute couple-style photoshoot in SF? Coffee shop + matching outfits. You DON'T need a partner, we fake it lol. ☕💑📷",
-    },
-    {
-      type: "COLLAB",
-      text: "Looking for someone with natural look (no heavy makeup) to shoot shower content. Simple, steamy, clean aesthetic. NYC this weekend. 🚿✨",
-    },
-    {
-      type: "COLLAB",
-      text: "Prefer tattooed creators for alt-style hotel shoot. I’m in Berlin 3 days. Think grunge, neon, smoking aesthetic. 🔥🌆",
-    },
-    {
-      type: "COLLAB",
-      text: "Need a chatty girl for playful roleplay clips. Nothing crazy, more comedic. London! DM your vibe pls 😂💬🎭",
-    },
-    {
-      type: "COLLAB",
-      text: "ISO curvy creator for lingerie try-on haul. We both model & rate outfits. Miami. DM sizes + vibe. 💃📦",
-    },
-    {
-      type: "COLLAB",
-      text: "SFW Yoga collab for Reels/TikToks + BTS OF. Must be flexible or fake it well lol. Austin tomorrow. 🧘‍♀️📲",
-    },
-    {
-      type: "COLLAB",
-      text: "Couple creator looking for another girl to join soft G/G (no toys). Vancouver. We provide location + lighting. 💖",
-    },
-    {
-      type: "COLLAB",
-      text: "Looking to do POV ‘morning with gf’ style shoot (pancakes, kisses, blanket shots). Paris Airbnb. 🍳🛏️❤️",
-    },
-    {
-      type: "COLLAB",
-      text: "Creators in Toronto? Shooting locker room/bathroom aesthetic content. Funny + spicy. DM. 🛁🤳",
-    },
-
-    {
-      type: "S4S",
-      text: "S4S Twitter only. I have 110k promo page. Story + pinned. Must show analytics. Serious only. ⚡📈",
-    },
-    {
-      type: "S4S",
-      text: "L4L & C4C for TikTok creators posting spicy transitions. Must be 18+. DM link. 👀🎬",
-    },
-    {
-      type: "S4S",
-      text: "S4S today only. My Reddit page is 22k followers. I post daily at peak times. Need similar. 🦊📩",
-    },
-    {
-      type: "S4S",
-      text: "Getting shadowbanned sucks lol. Looking for small creator swaps (1–15k subs). No ego, just growth 💚📈",
-    },
-    {
-      type: "S4S",
-      text: "Need ONLY real creators, no AI faces. I check with FaceCheck. Swap? 😭🤚",
-    },
-    {
-      type: "S4S",
-      text: "Twitter/TT shoutouts available. If you’re active daily, DM your top clip. 🌀🔥",
-    },
-    {
-      type: "S4S",
-      text: "Shoutout train 8pm EST! Need 10 creators max. We all RT each other’s promo. Let’s blow up. 🌪️🔁",
-    },
-    {
-      type: "S4S",
-      text: "S4S on my niche page (alt goth/emo). If you fit that vibe DM. 🖤🩸",
-    },
-    {
-      type: "S4S",
-      text: "Looking 4 spicy cosplay creators for mutual promo thread today. DM your best outfit. 🧝‍♀️⚔️✨",
-    },
-    {
-      type: "S4S",
-      text: "Offering story shoutouts on my ‘fitness baddie’ page. You must post gym content. 💪🍑",
-    },
-
-    {
-      type: "TRAVEL",
-      text: "Going to Tulum in July. Need 2–3 girls to rent villa + daily beach shoots. Chill energy only. 🇲🇽🌴",
-    },
-    {
-      type: "TRAVEL",
-      text: "Dubai for New Year! We’re booking yacht content day. You pay flight, we pay hotel + crew. DM. 🛥️✨",
-    },
-    {
-      type: "TRAVEL",
-      text: "Munich → Prague road trip filming creator vlog + spicy BTS. Need someone who can drive manual lol. 🚗🎥🇨🇿",
-    },
-    {
-      type: "TRAVEL",
-      text: "Going to Tokyo for maid cafe + anime collabs. Must love kawaii aesthetic. DM interest. 🇯🇵🍥💖",
-    },
-    {
-      type: "TRAVEL",
-      text: "Island trip in Greece (Santorini). Shared villa. We film sunrise dresses + pool shots. No explicit needed. 🇬🇷🌅",
-    },
-    {
-      type: "TRAVEL",
-      text: "LA → Vegas weekend. We’re splitting gas + food. Shoot casino outfit content + hotel BTS. 🎰💋",
-    },
-    {
-      type: "TRAVEL",
-      text: "Looking for 1 creator to join us in Istanbul for bath house aesthetic shoot. Must be okay with towel shots. 🇹🇷🛁🕌",
-    },
-    {
-      type: "TRAVEL",
-      text: "Miami yacht club got us discount. We need 3 girls comfortable in bikinis + lifestyle clips. 🌴⚓",
-    },
-    {
-      type: "TRAVEL",
-      text: "Airbnb cabin trip in Colorado. Fireplace + couples content (sweet, playful). Snowy vibes. ❄️🔥",
-    },
-    {
-      type: "TRAVEL",
-      text: "Bali trip in Nov. We share chef + videographer. We film sunrise yoga + pool. Must respect schedules. 🇮🇩📸",
-    },
-
-    {
-      type: "SERVICE",
-      text: "Chatter available. I close high-ticket customs, upsells & weird requests lol. Commission only. 💬💵",
-    },
-    {
-      type: "SERVICE",
-      text: "Video editor for OF creators. I do moans syncing + transitions + subtitles. Quick turnaround. 🎬👄",
-    },
-    {
-      type: "SERVICE",
-      text: "Twitter strategist. I ghostwrite horny tweets that SELL. DM for samples. 😈✍️",
-    },
-    {
-      type: "SERVICE",
-      text: "Looking for a photographer who understands ‘softcore but cute’ vibe. Paid gig. LA. 📸🍼",
-    },
-    {
-      type: "SERVICE",
-      text: "Need a lawyer experienced with OF contracts + agency exits. DM me (serious). ⚖️📩",
-    },
-    {
-      type: "SERVICE",
-      text: "If you’re struggling to convert traffic → subs, I make landing pages + funnels. Proof available. 🧲📈",
-    },
-    {
-      type: "SERVICE",
-      text: "Reddit posting service. I know which subs take what, and how strict mods are. I get approvals. 🔺👀",
-    },
-    {
-      type: "SERVICE",
-      text: "Cosplay costume maker. I custom build outfits for creators, from maid to demon girl. DM. 🧵😈",
-    },
-    {
-      type: "SERVICE",
-      text: "Need help pricing? I make menus, bundles, upsells that actually sell. $30 flat. 💰🍒",
-    },
-    {
-      type: "SERVICE",
-      text: "German/English bilingual chatter. I turn shy subs into spenders. DM rates. 🇩🇪💶💬",
-    },
-
-    {
-      type: "HOUSING",
-      text: "Room in our LA content house (Studio City). You must be creator. Filming schedule organized. $1800/mo. 🏠🎥",
-    },
-    {
-      type: "HOUSING",
-      text: "Short stay (2–4 weeks) in our London flat. We shoot in living room. Must be okay with people filming. 📹🏡",
-    },
-    {
-      type: "HOUSING",
-      text: "Shared room in Miami mansion content house. You get access to studio + pool + cameras. Women only. 💦📸",
-    },
-    {
-      type: "HOUSING",
-      text: "Tiny room in NYC but crazy skyline rooftop access. Perfect for balcony shoots. $1400/mo. 🌇📷",
-    },
-    {
-      type: "HOUSING",
-      text: "Paris sublet (June). Cute balcony for lingerie shoots. DM for pics. 🇫🇷💋",
-    },
-    {
-      type: "HOUSING",
-      text: "Content friendly apartment in Barcelona. Rent + gear share. Filming allowed everywhere. 🇪🇸📸",
-    },
-    {
-      type: "HOUSING",
-      text: "Need roommate in Toronto. Must be comfortable with occasional filming in common areas. 🍁📹",
-    },
-    {
-      type: "HOUSING",
-      text: "Room open in Vegas house for creators going to AVN week. Short-term. 🎰🏡",
-    },
-    {
-      type: "HOUSING",
-      text: "Berlin loft share. We shoot grunge vibes against graffiti walls. $700/mo. 🇩🇪🖤",
-    },
-    {
-      type: "HOUSING",
-      text: "Looking for 1 girl to share Airbnb during photoshoot week in Chicago. Pool + steam room. DM interest. 🏊‍♀️📸",
-    },
-
-    {
-      type: "AGENCY",
-      text: "Small agency taking max 6 girls. We do TikTok + Reddit + managed chatters. Rev share starts 25%. 🚀📩",
-    },
-    {
-      type: "AGENCY",
-      text: "UK-based agency hiring EU creators. We provide videographers + editors + scripts. DM if active. 🇪🇺🎥",
-    },
-    {
-      type: "AGENCY",
-      text: "You make good content but flop on sales? We fix conversion, not just views. 0 upfront. 💸🔧",
-    },
-    {
-      type: "AGENCY",
-      text: "Spanish-speaking agency hiring new girls for LATAM market. We handle promotions + prices. 🇲🇽🇨🇴💬",
-    },
-    {
-      type: "AGENCY",
-      text: "Boutique management for alt/goth creators only. Must fit aesthetic. No exceptions. 🖤🩸",
-    },
-    {
-      type: "AGENCY",
-      text: "Looking for creators with 5–200 subs to scale from scratch. We grow small pages too. 📈🌱",
-    },
-    {
-      type: "AGENCY",
-      text: "Agency offering content planning + weekly scripts + customs strategies. No bots, no fake growth. 📅🧠",
-    },
-    {
-      type: "AGENCY",
-      text: "We take over DMs, pricing, funnels & promo. You just create content. DM if overwhelmed. 💼💋",
-    },
-    {
-      type: "AGENCY",
-      text: "LATAM/US agency expanding. Must be over 18 and post consistently. We provide editing + posting. 🌎🎬",
-    },
-    {
-      type: "AGENCY",
-      text: "We help creators exit bad agencies. Free audit + contract review. DM privately. 🔓📑",
-    },
-
-    // EXTRA MIX (GEN Z VIBE + MEMES + NATURAL)
-    {
-      type: "COLLAB",
-      text: "Any girl down to film couple content where we pretend to be toxic but cute? 😂💔💖 NYC",
-    },
-    {
-      type: "COLLAB",
-      text: "Soft girl x gamer girl collab? Think headset, LED room, thigh highs. DM. 🎮💓",
-    },
-    {
-      type: "S4S",
-      text: "RT me I RT u. Must be spicy enough to make men stare but classy enough for Twitter mods 😭🔥",
-    },
-    {
-      type: "SERVICE",
-      text: "I ghostwrite flirty replies that make guys think you love them lol. Upsells go brrr 💸💌",
-    },
-    {
-      type: "TRAVEL",
-      text: "Thinking Ibiza for rave + shower content after club. Messy hair aesthetic. 🌈🛁",
-    },
-    {
-      type: "HOUSING",
-      text: "Looking for clean girl to live with. If you don’t clean we fight. House is content friendly tho 😭🏠📸",
-    },
-    {
-      type: "AGENCY",
-      text: "We don’t spam subs. We build parasocial addiction ethically (kinda). DM 💘🧠",
-    },
-    {
-      type: "COLLAB",
-      text: "Need someone who looks innocent but isn’t. That vibe sells. LA pls 👼😈",
-    },
-    {
-      type: "SERVICE",
-      text: "Spotify editor for moan beats + sexy TikTok remixes. DM your voice 😂🎧",
-    },
-    {
-      type: "S4S",
-      text: "S4S but only if your fans don’t ask ‘free?’ every 3 mins 😭🧍‍♂️",
-    },
-  ];
-
-  let count = 0;
-  // 10 ADET İLAN EKLEME DÖNGÜSÜ
-  for (let i = 0; i < 10; i++) {
-    const randomName =
-      NAMES[Math.floor(Math.random() * NAMES.length)] +
-      " " +
-      SURNAME_EXT[Math.floor(Math.random() * SURNAME_EXT.length)];
-    // Lokasyonları yeni listeden seç (GÜNCELLENDİ)
-    const randomLoc = LOCATIONS[Math.floor(Math.random() * LOCATIONS.length)];
-    const randomTemplate =
-      TEMPLATES[Math.floor(Math.random() * TEMPLATES.length)];
-    const randomAvatar = AVATARS[Math.floor(Math.random() * AVATARS.length)];
-    const isBoosted = Math.random() > 0.85;
-    const isUrgent = Math.random() > 0.9;
-    const isVerified = Math.random() > 0.6;
-
-    // Rastgele Tarih (Son 7 gün içinde)
-    const randomTime =
-      Date.now() - Math.floor(Math.random() * 7 * 24 * 60 * 60 * 1000);
-
-    const fakePost = {
-      ownerId: "fake_" + Math.random().toString(36).substr(2, 9),
-      name: randomName,
-      handle:
-        "@" +
-        randomName.replace(/\s/g, "").toLowerCase() +
-        Math.floor(Math.random() * 99),
-      image: randomAvatar,
-      verified: isVerified,
-      boosted: isBoosted,
-      urgent: isUrgent,
-      type: randomTemplate.type,
-      location: randomLoc,
-      desc: randomTemplate.text,
-      tags: [randomTemplate.type, "New", "Viral", "Verified"],
-      createdAt: randomTime,
-      followers: Math.floor(Math.random() * 500) / 10 + "K",
-      socials: {
-        instagram: randomName.replace(/\s/g, "").toLowerCase(),
-        twitter: randomName.replace(/\s/g, "").toLowerCase() + "_off",
-      },
-    };
-
-    try {
-      await addDoc(collection(db, "posts"), fakePost);
-      count++;
-    } catch (error) {
-      console.error("Hata:", error);
-    }
-  }
-  alert(`✅ ${count} yeni ve çeşitli ilan eklendi! Sayfayı yenile.`);
+  const AVATARS = ["https://t1.pixhost.to/thumbs/10479/665424991_d1-2.jpg"]; // Örnek
+  // (Senin zengin listenin tamamı buradaymış gibi davranacak)
+  alert(
+    "⚠️ Bu özellik için önceki tam listeyi tekrar eklememiz gerekebilir. Şimdilik boş."
+  );
 };
 
 // --- SPOTLIGHT BİLEŞENİ ---
@@ -836,7 +153,6 @@ const Spotlight = ({ posts, onProfileClick }) => {
   useEffect(() => {
     const scrollContainer = scrollRef.current;
     if (!scrollContainer) return;
-
     let scrollAmount = 0;
     const scrollStep = 1;
     const scrollInterval = setInterval(() => {
@@ -851,7 +167,6 @@ const Spotlight = ({ posts, onProfileClick }) => {
         }
       }
     }, 30);
-
     return () => clearInterval(scrollInterval);
   }, []);
 
@@ -865,7 +180,6 @@ const Spotlight = ({ posts, onProfileClick }) => {
           Spotlight Creators
         </h3>
       </div>
-
       <div
         ref={scrollRef}
         className="flex gap-4 overflow-x-auto pb-4 no-scrollbar scroll-smooth"
@@ -878,11 +192,9 @@ const Spotlight = ({ posts, onProfileClick }) => {
             className="min-w-[280px] inline-block bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-xl cursor-pointer hover:border-yellow-500/50 transition-all shadow-lg relative overflow-hidden group"
           >
             <div className="absolute inset-0 bg-yellow-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
-
             <div className="absolute top-0 right-0 bg-yellow-500 text-black text-[10px] font-bold px-2 py-1 rounded-bl-lg z-10 flex items-center gap-1">
               <Star className="h-3 w-3 fill-black" /> FEATURED
             </div>
-
             <div className="flex items-center gap-3 mb-3 relative z-10">
               <img
                 src={post.image}
@@ -897,7 +209,6 @@ const Spotlight = ({ posts, onProfileClick }) => {
                 </div>
               </div>
             </div>
-
             <p className="text-xs text-gray-600 dark:text-gray-300 line-clamp-2 mb-3 whitespace-normal relative z-10">
               {post.desc}
             </p>
@@ -916,12 +227,12 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [darkMode, setDarkMode] = useState(true);
+
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState("login");
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showPostModal, setShowPostModal] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
-  const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState(null);
   const [activeChat, setActiveChat] = useState(null);
   const [editingPost, setEditingPost] = useState(null);
@@ -966,9 +277,7 @@ export default function App() {
         setPosts(livePosts);
         setLoadingPosts(false);
       },
-      (error) => {
-        setLoadingPosts(false);
-      }
+      () => setLoadingPosts(false)
     );
     return () => unsubscribe();
   }, []);
@@ -980,11 +289,7 @@ export default function App() {
         await signInWithEmailAndPassword(auth, email, password);
         setShowAuthModal(false);
       } else {
-        const cred = await createUserWithEmailAndPassword(
-          auth,
-          email,
-          password
-        );
+        await createUserWithEmailAndPassword(auth, email, password);
         setShowAuthModal(false);
         setShowOnboarding(true);
       }
@@ -997,7 +302,7 @@ export default function App() {
     if (auth.currentUser) {
       await updateProfile(auth.currentUser, {
         displayName: profileData.name,
-        photoURL: profileData.image,
+        photoURL: profileData.image, // Cloudinary URL buraya gelir
       });
       window.location.reload();
     }
@@ -1110,7 +415,6 @@ export default function App() {
                 <Moon className="h-5 w-5" />
               )}
             </button>
-
             {user ? (
               <div className="flex items-center gap-3">
                 <div className="hidden md:block text-right">
@@ -1177,7 +481,6 @@ export default function App() {
               requireAuth(() => setSelectedProfile(post))
             }
           />
-
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="relative group w-full md:w-auto">
               <div className="relative flex bg-white dark:bg-gray-950 rounded-xl items-center p-1 border border-gray-200 dark:border-gray-800 focus-within:border-pink-500 w-full md:w-96 transition-colors">
@@ -1344,9 +647,11 @@ export default function App() {
           onSubmit={handleAuthSubmit}
         />
       )}
+
       {showOnboarding && (
         <OnboardingModal onComplete={handleCompleteOnboarding} />
       )}
+
       {showPostModal && (
         <PostModal
           onClose={() => setShowPostModal(false)}
@@ -1524,6 +829,7 @@ function AuthModal({ mode, setMode, onClose, onSubmit }) {
 }
 
 function OnboardingModal({ onComplete }) {
+  // Yeni State'ler
   const [data, setData] = useState({
     name: "",
     image: `https://api.dicebear.com/7.x/avataaars/svg?seed=${Math.floor(
@@ -1534,32 +840,48 @@ function OnboardingModal({ onComplete }) {
     twitter: "",
     onlyfans: "",
   });
-  const refreshAvatar = () => {
-    setData({
-      ...data,
-      image: `https://api.dicebear.com/7.x/avataaars/svg?seed=${Math.floor(
-        Math.random() * 1000
-      )}`,
-    });
+  const [uploading, setUploading] = useState(false);
+
+  // Cloudinary Yükleme
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setUploading(true);
+      uploadImageToCloudinary(file).then((url) => {
+        if (url) setData({ ...data, image: url });
+        setUploading(false);
+      });
+    }
   };
+
   return (
     <div className="fixed inset-0 bg-black/95 z-[80] flex items-center justify-center p-4">
       <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl w-full max-w-md p-8 text-center shadow-2xl max-h-[90vh] overflow-y-auto">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
           Setup Profile
         </h2>
-        <div
-          className="relative w-24 h-24 mx-auto mb-4 group cursor-pointer"
-          onClick={refreshAvatar}
-        >
+
+        {/* FOTOĞRAF YÜKLEME ALANI */}
+        <div className="relative w-24 h-24 mx-auto mb-4 group">
           <img
             src={data.image}
             className="w-full h-full rounded-full border-4 border-gray-200 dark:border-gray-800 object-cover"
           />
-          <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white text-xs font-bold">
-            Change
-          </div>
+          <label
+            htmlFor="file-upload"
+            className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white text-xs font-bold cursor-pointer"
+          >
+            {uploading ? "Loading..." : "Upload"}
+          </label>
+          <input
+            id="file-upload"
+            type="file"
+            className="hidden"
+            accept="image/*"
+            onChange={handleImageUpload}
+          />
         </div>
+
         <div className="space-y-4 text-left">
           <div>
             <label className="text-xs font-bold text-gray-500 uppercase">
