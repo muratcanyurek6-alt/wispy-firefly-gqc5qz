@@ -92,6 +92,7 @@ const CATEGORIES = [
 
 /* --- SAHTE VERİ OLUŞTURUCU --- */
 const generateFakeData = async () => {
+  // İsimler
   const NAMES = [
     "Jessica",
     "Amber",
@@ -165,6 +166,7 @@ const generateFakeData = async () => {
     "Camila",
     "Selena",
   ];
+
   const SURNAME_EXT = [
     "xo",
     "Official",
@@ -212,6 +214,7 @@ const generateFakeData = async () => {
     "Charm",
     "Mode",
   ];
+
   const LOCATIONS = [
     "Los Angeles, CA",
     "San Diego, CA",
@@ -329,6 +332,7 @@ const generateFakeData = async () => {
     "Rio de Janeiro, Brazil",
     "São Paulo, Brazil",
   ];
+
   const AVATARS = [
     "https://t1.pixhost.to/thumbs/10479/665424991_d1-2.jpg",
     "https://t1.pixhost.to/thumbs/10479/665424992_d1-3.jpg",
@@ -481,6 +485,7 @@ const generateFakeData = async () => {
     "https://t1.pixhost.to/thumbs/10479/665425216_39-3.jpg",
   ];
 
+  // İlan Metinleri (GÜNCELLENDİ)
   const TEMPLATES = [
     {
       type: "COLLAB",
@@ -824,24 +829,20 @@ const generateFakeData = async () => {
   alert(`✅ ${count} yeni ve çeşitli ilan eklendi! Sayfayı yenile.`);
 };
 
-// --- SPOTLIGHT BİLEŞENİ (YENİLENEN TASARIM) ---
-// Otomatik kayan carousel yapısı
+// --- SPOTLIGHT BİLEŞENİ ---
 const Spotlight = ({ posts, onProfileClick }) => {
   const scrollRef = React.useRef(null);
 
-  // Otomatik Kaydırma Efekti
   useEffect(() => {
     const scrollContainer = scrollRef.current;
     if (!scrollContainer) return;
 
     let scrollAmount = 0;
-    const scrollStep = 1; // Kaydırma hızı
+    const scrollStep = 1;
     const scrollInterval = setInterval(() => {
       if (scrollContainer) {
         scrollContainer.scrollLeft += scrollStep;
         scrollAmount += scrollStep;
-
-        // Sona gelince başa sar (sonsuz döngü hissi için)
         if (
           scrollContainer.scrollLeft >=
           scrollContainer.scrollWidth - scrollContainer.clientWidth
@@ -849,7 +850,7 @@ const Spotlight = ({ posts, onProfileClick }) => {
           scrollContainer.scrollLeft = 0;
         }
       }
-    }, 30); // 30ms'de bir kaydır
+    }, 30);
 
     return () => clearInterval(scrollInterval);
   }, []);
@@ -865,7 +866,6 @@ const Spotlight = ({ posts, onProfileClick }) => {
         </h3>
       </div>
 
-      {/* Carousel Container */}
       <div
         ref={scrollRef}
         className="flex gap-4 overflow-x-auto pb-4 no-scrollbar scroll-smooth"
@@ -877,7 +877,6 @@ const Spotlight = ({ posts, onProfileClick }) => {
             onClick={() => onProfileClick(post)}
             className="min-w-[280px] inline-block bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-xl cursor-pointer hover:border-yellow-500/50 transition-all shadow-lg relative overflow-hidden group"
           >
-            {/* Altın Parıltı Efekti */}
             <div className="absolute inset-0 bg-yellow-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
 
             <div className="absolute top-0 right-0 bg-yellow-500 text-black text-[10px] font-bold px-2 py-1 rounded-bl-lg z-10 flex items-center gap-1">
@@ -916,10 +915,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
-
-  // Tema Yönetimi (Karanlık Mod Varsayılan)
   const [darkMode, setDarkMode] = useState(true);
-
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState("login");
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -930,7 +926,6 @@ export default function App() {
   const [activeChat, setActiveChat] = useState(null);
   const [editingPost, setEditingPost] = useState(null);
 
-  // Tema Değişikliğini Uygula
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add("dark");
@@ -1063,35 +1058,6 @@ export default function App() {
     }
   };
 
-  const generateBioWithGemini = async (keywords) => {
-    if (!keywords) return "Anahtar kelime giriniz.";
-    if (!apiKey) return "API Key eksik.";
-    try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [
-              {
-                parts: [
-                  { text: `Write a bio for creator. Keywords: ${keywords}` },
-                ],
-              },
-            ],
-          }),
-        }
-      );
-      const data = await response.json();
-      return (
-        data.candidates?.[0]?.content?.parts?.[0]?.text || "Bio oluşturulamadı."
-      );
-    } catch (error) {
-      return "Servis kapalı.";
-    }
-  };
-
   const filteredPosts = posts.filter((post) => {
     const matchesCategory = filter === "ALL" || post.type === filter;
     const searchLower = searchQuery.toLowerCase();
@@ -1102,7 +1068,6 @@ export default function App() {
     return matchesCategory && matchesSearch;
   });
 
-  // Sadece Boosted (Promoted) ilanları al
   const boostedPosts = posts.filter((p) => p.boosted);
 
   if (authLoading)
@@ -1135,7 +1100,6 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-4">
-            {/* TEMA DEĞİŞTİRME BUTONU */}
             <button
               onClick={() => setDarkMode(!darkMode)}
               className="p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
@@ -1169,7 +1133,6 @@ export default function App() {
                 >
                   <LogOut className="h-4 w-4" />
                 </button>
-
                 <button
                   onClick={() => {
                     setEditingPost(null);
@@ -1208,7 +1171,6 @@ export default function App() {
 
       <div className="relative bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 transition-colors duration-300">
         <div className="max-w-6xl mx-auto px-4 py-8">
-          {/* SPOTLIGHT (YENİ BİLEŞEN) */}
           <Spotlight
             posts={boostedPosts}
             onProfileClick={(post) =>
@@ -1298,7 +1260,6 @@ export default function App() {
                     </button>
                   </div>
                 )}
-
                 <div className="absolute -top-3 left-5 flex gap-2">
                   {post.boosted && (
                     <div className="bg-yellow-500 text-black text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">
@@ -1311,7 +1272,6 @@ export default function App() {
                     </div>
                   )}
                 </div>
-
                 <div className="flex items-center gap-3 mb-4 mt-2">
                   <img
                     src={post.image}
@@ -1329,7 +1289,7 @@ export default function App() {
                           : "text-gray-900 dark:text-white"
                       }`}
                     >
-                      {post.name}
+                      {post.name}{" "}
                       {post.verified && (
                         <CheckCircle className="h-3.5 w-3.5 text-blue-500" />
                       )}
@@ -1376,8 +1336,6 @@ export default function App() {
         </button>
       </div>
 
-      {/* --- MODALLAR --- */}
-
       {showAuthModal && (
         <AuthModal
           mode={authMode}
@@ -1387,10 +1345,7 @@ export default function App() {
         />
       )}
       {showOnboarding && (
-        <OnboardingModal
-          onComplete={handleCompleteOnboarding}
-          generateBio={generateBioWithGemini}
-        />
+        <OnboardingModal onComplete={handleCompleteOnboarding} />
       )}
       {showPostModal && (
         <PostModal
@@ -1419,6 +1374,47 @@ export default function App() {
               <p className="text-gray-500 dark:text-gray-400 mb-4">
                 {selectedProfile.desc}
               </p>
+              <div className="grid grid-cols-3 gap-2 mb-6">
+                {selectedProfile.socials?.instagram && (
+                  <a
+                    href={`https://instagram.com/${selectedProfile.socials.instagram}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex flex-col items-center bg-gray-100 dark:bg-gray-800 p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 transition-colors"
+                  >
+                    <Instagram className="h-4 w-4 text-pink-500 mb-1" />
+                    <span className="text-[10px] text-gray-600 dark:text-gray-300">
+                      Insta
+                    </span>
+                  </a>
+                )}
+                {selectedProfile.socials?.twitter && (
+                  <a
+                    href={`https://twitter.com/${selectedProfile.socials.twitter}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex flex-col items-center bg-gray-100 dark:bg-gray-800 p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 transition-colors"
+                  >
+                    <Twitter className="h-4 w-4 text-blue-400 mb-1" />
+                    <span className="text-[10px] text-gray-600 dark:text-gray-300">
+                      Twitter
+                    </span>
+                  </a>
+                )}
+                {selectedProfile.socials?.onlyfans && (
+                  <a
+                    href={selectedProfile.socials.onlyfans}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex flex-col items-center bg-gray-100 dark:bg-gray-800 p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 transition-colors"
+                  >
+                    <LinkIcon className="h-4 w-4 text-blue-500 mb-1" />
+                    <span className="text-[10px] text-gray-600 dark:text-gray-300">
+                      Links
+                    </span>
+                  </a>
+                )}
+              </div>
               <button className="w-full bg-pink-600 text-white py-3 rounded-xl font-bold shadow-lg">
                 Message
               </button>
@@ -1492,12 +1488,12 @@ function AuthModal({ mode, setMode, onClose, onSubmit }) {
           onSubmit={(e) => onSubmit(e, email, password)}
           className="space-y-4"
         >
-          {/* ZORLA BEYAZ YAZI KALDIRILDI (Otomatik Tema Rengi İçin) */}
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none focus:border-pink-500"
+            style={{ color: "white", backgroundColor: "#1f2937" }}
             placeholder="Email"
             required
           />
@@ -1506,6 +1502,7 @@ function AuthModal({ mode, setMode, onClose, onSubmit }) {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none focus:border-pink-500"
+            style={{ color: "white", backgroundColor: "#1f2937" }}
             placeholder="Password"
             required
           />
@@ -1532,28 +1529,113 @@ function OnboardingModal({ onComplete }) {
     image: `https://api.dicebear.com/7.x/avataaars/svg?seed=${Math.floor(
       Math.random() * 1000
     )}`,
+    bio: "",
+    instagram: "",
+    twitter: "",
+    onlyfans: "",
   });
+  const refreshAvatar = () => {
+    setData({
+      ...data,
+      image: `https://api.dicebear.com/7.x/avataaars/svg?seed=${Math.floor(
+        Math.random() * 1000
+      )}`,
+    });
+  };
   return (
     <div className="fixed inset-0 bg-black/95 z-[80] flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl w-full max-w-md p-8 text-center shadow-2xl">
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl w-full max-w-md p-8 text-center shadow-2xl max-h-[90vh] overflow-y-auto">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
           Setup Profile
         </h2>
-        <img
-          src={data.image}
-          className="h-24 w-24 rounded-full mx-auto mb-4 bg-gray-100 dark:bg-gray-800 border-4 border-gray-200 dark:border-gray-800"
-        />
-        <input
-          value={data.name}
-          onChange={(e) => setData({ ...data, name: e.target.value })}
-          className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none mb-6"
-          placeholder="Display Name"
-        />
+        <div
+          className="relative w-24 h-24 mx-auto mb-4 group cursor-pointer"
+          onClick={refreshAvatar}
+        >
+          <img
+            src={data.image}
+            className="w-full h-full rounded-full border-4 border-gray-200 dark:border-gray-800 object-cover"
+          />
+          <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white text-xs font-bold">
+            Change
+          </div>
+        </div>
+        <div className="space-y-4 text-left">
+          <div>
+            <label className="text-xs font-bold text-gray-500 uppercase">
+              Display Name
+            </label>
+            <input
+              value={data.name}
+              onChange={(e) => setData({ ...data, name: e.target.value })}
+              className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none mt-1"
+              style={{ color: "white", backgroundColor: "#1f2937" }}
+              placeholder="e.g. Jessica Rabbit"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-bold text-gray-500 uppercase">
+              About You (Bio)
+            </label>
+            <textarea
+              value={data.bio}
+              onChange={(e) => setData({ ...data, bio: e.target.value })}
+              className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none mt-1"
+              style={{ color: "white", backgroundColor: "#1f2937" }}
+              placeholder="Tell us about yourself..."
+              rows="3"
+              maxLength={500}
+            />
+            <div className="text-right text-[10px] text-gray-400">
+              {data.bio.length}/500
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-bold text-gray-500 uppercase">
+                Instagram
+              </label>
+              <input
+                value={data.instagram}
+                onChange={(e) =>
+                  setData({ ...data, instagram: e.target.value })
+                }
+                className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-2 text-gray-900 dark:text-white text-sm outline-none mt-1"
+                style={{ color: "white", backgroundColor: "#1f2937" }}
+                placeholder="username"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-bold text-gray-500 uppercase">
+                Twitter / X
+              </label>
+              <input
+                value={data.twitter}
+                onChange={(e) => setData({ ...data, twitter: e.target.value })}
+                className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-2 text-gray-900 dark:text-white text-sm outline-none mt-1"
+                style={{ color: "white", backgroundColor: "#1f2937" }}
+                placeholder="username"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-bold text-gray-500 uppercase">
+              OnlyFans / Linktree
+            </label>
+            <input
+              value={data.onlyfans}
+              onChange={(e) => setData({ ...data, onlyfans: e.target.value })}
+              className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-2 text-gray-900 dark:text-white text-sm outline-none mt-1"
+              style={{ color: "white", backgroundColor: "#1f2937" }}
+              placeholder="https://..."
+            />
+          </div>
+        </div>
         <button
           onClick={() => onComplete(data)}
-          className="w-full bg-pink-600 text-white font-bold py-3.5 rounded-xl shadow-lg"
+          className="w-full bg-pink-600 text-white font-bold py-3.5 rounded-xl shadow-lg mt-6"
         >
-          Finish
+          Complete Profile
         </button>
       </div>
     </div>
@@ -1585,6 +1667,7 @@ function PostModal({ onClose, onSubmit }) {
             value={formData.type}
             onChange={(e) => setFormData({ ...formData, type: e.target.value })}
             className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none"
+            style={{ color: "white", backgroundColor: "#1f2937" }}
           >
             {CATEGORIES.map((c) => (
               <option key={c.id} value={c.id}>
@@ -1592,7 +1675,6 @@ function PostModal({ onClose, onSubmit }) {
               </option>
             ))}
           </select>
-
           <input
             value={formData.location}
             onChange={(e) =>
@@ -1600,14 +1682,15 @@ function PostModal({ onClose, onSubmit }) {
             }
             placeholder="Location"
             className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none"
+            style={{ color: "white", backgroundColor: "#1f2937" }}
           />
-
           <textarea
             rows="3"
             value={formData.desc}
             onChange={(e) => setFormData({ ...formData, desc: e.target.value })}
             placeholder="Details..."
             className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none"
+            style={{ color: "white", backgroundColor: "#1f2937" }}
           ></textarea>
           <div className="flex gap-2 text-sm font-bold">
             <div
