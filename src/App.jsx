@@ -53,7 +53,6 @@ import {
 } from "lucide-react";
 
 // --- TASARIM KURTARICI (CDN) ---
-// Bu satır, ayarlar bozuk olsa bile tasarımı zorla yükler.
 const TailwindCDN = () => (
   <link
     href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
@@ -132,23 +131,135 @@ const generateFakeData = async () => {
     "Queen",
   ];
 
-  // Lokasyonlar
+  // Lokasyonlar (GÜNCELLENDİ)
   const LOCATIONS = [
-    "Miami, FL",
+    // --- UNITED STATES ---
     "Los Angeles, CA",
+    "San Diego, CA",
+    "San Francisco, CA",
+    "San Jose, CA",
+    "Sacramento, CA",
+    "Long Beach, CA",
+    "Oakland, CA",
+    "Fresno, CA",
+    "Miami, FL",
+    "Orlando, FL",
+    "Tampa, FL",
+    "Jacksonville, FL",
+    "Fort Lauderdale, FL",
     "New York, NY",
+    "Brooklyn, NY",
+    "Queens, NY",
+    "Buffalo, NY",
+    "Rochester, NY",
     "Las Vegas, NV",
-    "London, UK",
-    "Dubai, UAE",
-    "Tulum, Mexico",
+    "Reno, NV",
+    "Chicago, IL",
+    "Aurora, IL",
+    "Naperville, IL",
+    "Houston, TX",
+    "Dallas, TX",
     "Austin, TX",
-    "Bali, Indonesia",
+    "San Antonio, TX",
+    "Fort Worth, TX",
+    "Phoenix, AZ",
+    "Tucson, AZ",
+    "Mesa, AZ",
+    "Seattle, WA",
+    "Spokane, WA",
+    "Tacoma, WA",
+    "Denver, CO",
+    "Colorado Springs, CO",
+    "Atlanta, GA",
+    "Savannah, GA",
+    "Charlotte, NC",
+    "Raleigh, NC",
+    "Durham, NC",
+    "Philadelphia, PA",
+    "Pittsburgh, PA",
+    "Detroit, MI",
+    "Grand Rapids, MI",
+    "Portland, OR",
+    "Eugene, OR",
+    "Minneapolis, MN",
+    "Saint Paul, MN",
+    "Nashville, TN",
+    "Memphis, TN",
+    "New Orleans, LA",
+    "Baton Rouge, LA",
+    "Kansas City, MO",
+    "St. Louis, MO",
+    "Louisville, KY",
+    "Baltimore, MD",
+    "Milwaukee, WI",
+    "Oklahoma City, OK",
+    "Tulsa, OK",
+    "Salt Lake City, UT",
+    "Provo, UT",
+    "Boise, ID",
+    "Albuquerque, NM",
+    "Honolulu, HI",
+    "Anchorage, AK",
     "Online",
+    "Remote",
+    "Traveling",
+
+    // --- UNITED KINGDOM ---
+    "London, UK",
+    "Manchester, UK",
+    "Birmingham, UK",
+
+    // --- EUROPE ---
+    "Paris, France",
+    "Marseille, France",
+    "Lyon, France",
+    "Berlin, Germany",
+    "Hamburg, Germany",
+    "Munich, Germany",
+    "Amsterdam, Netherlands",
+    "Rotterdam, Netherlands",
+    "The Hague, Netherlands",
+    "Madrid, Spain",
+    "Barcelona, Spain",
+    "Valencia, Spain",
+    "Rome, Italy",
+    "Milan, Italy",
+    "Florence, Italy",
+    "Athens, Greece",
     "Mykonos, Greece",
-    "Ibiza, Spain",
+    "Thessaloniki, Greece",
+    "Lisbon, Portugal",
+    "Porto, Portugal",
+    "Faro, Portugal",
+    "Warsaw, Poland",
+    "Krakow, Poland",
+    "Wroclaw, Poland",
+    "Vienna, Austria",
+    "Graz, Austria",
+    "Linz, Austria",
+    "Zurich, Switzerland",
+    "Geneva, Switzerland",
+    "Basel, Switzerland",
+    "Prague, Czech Republic",
+    "Brno, Czech Republic",
+    "Ostrava, Czech Republic",
+    "Budapest, Hungary",
+    "Debrecen, Hungary",
+    "Szeged, Hungary",
+
+    // --- TURKEY ---
+    "Istanbul, Turkey",
+
+    // --- LATIN AMERICA ---
+    "Mexico City, Mexico",
+    "Tulum, Mexico",
+    "Cancun, Mexico",
+    "Buenos Aires, Argentina",
+    "Rio de Janeiro, Brazil",
+    "São Paulo, Brazil",
   ];
 
-  // 12 Farklı ve Gerçekçi Fotoğraf (Unsplash)
+  // Fotoğraflar (GÜNCELLENDİ - TÜM LİNKLER EKLENDİ)
   const AVATARS = [
     "https://t1.pixhost.to/thumbs/10479/665424991_d1-2.jpg",
     "https://t1.pixhost.to/thumbs/10479/665424992_d1-3.jpg",
@@ -301,7 +412,7 @@ const generateFakeData = async () => {
     "https://t1.pixhost.to/thumbs/10479/665425216_39-3.jpg",
   ];
 
-  // İlan Metinleri
+  // İlan Metinleri (GÜNCELLENDİ)
   const TEMPLATES = [
     {
       type: "COLLAB",
@@ -599,6 +710,7 @@ const generateFakeData = async () => {
       NAMES[Math.floor(Math.random() * NAMES.length)] +
       " " +
       SURNAME_EXT[Math.floor(Math.random() * SURNAME_EXT.length)];
+    // Lokasyonları yeni listeden seç (GÜNCELLENDİ)
     const randomLoc = LOCATIONS[Math.floor(Math.random() * LOCATIONS.length)];
     const randomTemplate =
       TEMPLATES[Math.floor(Math.random() * TEMPLATES.length)];
