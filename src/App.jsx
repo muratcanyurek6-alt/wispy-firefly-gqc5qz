@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { initializeApp } from "firebase/app";
 import {
   getAuth,
@@ -50,6 +50,8 @@ import {
   Flame,
   Database,
   LogOut,
+  Sun,
+  Moon,
 } from "lucide-react";
 
 // --- TASARIM KURTARICI (CDN) ---
@@ -90,7 +92,6 @@ const CATEGORIES = [
 
 /* --- SAHTE VERİ OLUŞTURUCU --- */
 const generateFakeData = async () => {
-  // İsimler (GENİŞLETİLDİ)
   const NAMES = [
     "Jessica",
     "Amber",
@@ -164,8 +165,6 @@ const generateFakeData = async () => {
     "Camila",
     "Selena",
   ];
-
-  // Soyadı Uzantıları (GENİŞLETİLDİ)
   const SURNAME_EXT = [
     "xo",
     "Official",
@@ -213,10 +212,7 @@ const generateFakeData = async () => {
     "Charm",
     "Mode",
   ];
-
-  // Lokasyonlar (GENİŞLETİLDİ)
   const LOCATIONS = [
-    // --- UNITED STATES ---
     "Los Angeles, CA",
     "San Diego, CA",
     "San Francisco, CA",
@@ -286,13 +282,9 @@ const generateFakeData = async () => {
     "Online",
     "Remote",
     "Traveling",
-
-    // --- UNITED KINGDOM ---
     "London, UK",
     "Manchester, UK",
     "Birmingham, UK",
-
-    // --- EUROPE ---
     "Paris, France",
     "Marseille, France",
     "Lyon, France",
@@ -329,11 +321,7 @@ const generateFakeData = async () => {
     "Budapest, Hungary",
     "Debrecen, Hungary",
     "Szeged, Hungary",
-
-    // --- TURKEY ---
     "Istanbul, Turkey",
-
-    // --- LATIN AMERICA ---
     "Mexico City, Mexico",
     "Tulum, Mexico",
     "Cancun, Mexico",
@@ -341,8 +329,6 @@ const generateFakeData = async () => {
     "Rio de Janeiro, Brazil",
     "São Paulo, Brazil",
   ];
-
-  // Fotoğraflar (GÜNCELLENDİ - TÜM LİNKLER EKLENDİ)
   const AVATARS = [
     "https://t1.pixhost.to/thumbs/10479/665424991_d1-2.jpg",
     "https://t1.pixhost.to/thumbs/10479/665424992_d1-3.jpg",
@@ -495,7 +481,6 @@ const generateFakeData = async () => {
     "https://t1.pixhost.to/thumbs/10479/665425216_39-3.jpg",
   ];
 
-  // İlan Metinleri (GÜNCELLENDİ)
   const TEMPLATES = [
     {
       type: "COLLAB",
@@ -839,6 +824,91 @@ const generateFakeData = async () => {
   alert(`✅ ${count} yeni ve çeşitli ilan eklendi! Sayfayı yenile.`);
 };
 
+// --- SPOTLIGHT BİLEŞENİ (YENİLENEN TASARIM) ---
+// Otomatik kayan carousel yapısı
+const Spotlight = ({ posts, onProfileClick }) => {
+  const scrollRef = React.useRef(null);
+
+  // Otomatik Kaydırma Efekti
+  useEffect(() => {
+    const scrollContainer = scrollRef.current;
+    if (!scrollContainer) return;
+
+    let scrollAmount = 0;
+    const scrollStep = 1; // Kaydırma hızı
+    const scrollInterval = setInterval(() => {
+      if (scrollContainer) {
+        scrollContainer.scrollLeft += scrollStep;
+        scrollAmount += scrollStep;
+
+        // Sona gelince başa sar (sonsuz döngü hissi için)
+        if (
+          scrollContainer.scrollLeft >=
+          scrollContainer.scrollWidth - scrollContainer.clientWidth
+        ) {
+          scrollContainer.scrollLeft = 0;
+        }
+      }
+    }, 30); // 30ms'de bir kaydır
+
+    return () => clearInterval(scrollInterval);
+  }, []);
+
+  if (posts.length === 0) return null;
+
+  return (
+    <div className="mb-10 animate-in fade-in slide-in-from-top-4 duration-500">
+      <div className="flex items-center gap-2 mb-4">
+        <TrendingUp className="h-5 w-5 text-yellow-500" />
+        <h3 className="text-sm font-bold text-gray-900 dark:text-gray-300 uppercase tracking-wider">
+          Spotlight Creators
+        </h3>
+      </div>
+
+      {/* Carousel Container */}
+      <div
+        ref={scrollRef}
+        className="flex gap-4 overflow-x-auto pb-4 no-scrollbar scroll-smooth"
+        style={{ whiteSpace: "nowrap" }}
+      >
+        {posts.map((post) => (
+          <div
+            key={post.id}
+            onClick={() => onProfileClick(post)}
+            className="min-w-[280px] inline-block bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-xl cursor-pointer hover:border-yellow-500/50 transition-all shadow-lg relative overflow-hidden group"
+          >
+            {/* Altın Parıltı Efekti */}
+            <div className="absolute inset-0 bg-yellow-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+
+            <div className="absolute top-0 right-0 bg-yellow-500 text-black text-[10px] font-bold px-2 py-1 rounded-bl-lg z-10 flex items-center gap-1">
+              <Star className="h-3 w-3 fill-black" /> FEATURED
+            </div>
+
+            <div className="flex items-center gap-3 mb-3 relative z-10">
+              <img
+                src={post.image}
+                className="h-12 w-12 rounded-full object-cover border-2 border-yellow-500 shadow-md"
+              />
+              <div className="truncate">
+                <h4 className="font-bold text-gray-900 dark:text-white text-sm truncate w-32">
+                  {post.name}
+                </h4>
+                <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                  <MapPin className="h-3 w-3 text-yellow-500" /> {post.location}
+                </div>
+              </div>
+            </div>
+
+            <p className="text-xs text-gray-600 dark:text-gray-300 line-clamp-2 mb-3 whitespace-normal relative z-10">
+              {post.desc}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 export default function App() {
   const [posts, setPosts] = useState([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
@@ -846,6 +916,9 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+
+  // Tema Yönetimi (Karanlık Mod Varsayılan)
+  const [darkMode, setDarkMode] = useState(true);
 
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState("login");
@@ -856,6 +929,15 @@ export default function App() {
   const [selectedProfile, setSelectedProfile] = useState(null);
   const [activeChat, setActiveChat] = useState(null);
   const [editingPost, setEditingPost] = useState(null);
+
+  // Tema Değişikliğini Uygula
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [darkMode]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -1020,20 +1102,25 @@ export default function App() {
     return matchesCategory && matchesSearch;
   });
 
+  // Sadece Boosted (Promoted) ilanları al
   const boostedPosts = posts.filter((p) => p.boosted);
 
   if (authLoading)
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <Loader2 className="h-10 w-10 text-pink-500 animate-spin" />
       </div>
     );
 
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-200 font-sans selection:bg-pink-500 selection:text-white pb-20 md:pb-0">
+    <div
+      className={`min-h-screen font-sans selection:bg-pink-500 selection:text-white pb-20 md:pb-0 transition-colors duration-300 ${
+        darkMode ? "dark bg-gray-900 text-gray-200" : "bg-gray-50 text-gray-900"
+      }`}
+    >
       <TailwindCDN />
 
-      <nav className="sticky top-0 z-40 bg-gray-900/90 backdrop-blur-xl border-b border-gray-800">
+      <nav className="sticky top-0 z-40 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800 transition-colors duration-300">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <div
             className="flex items-center gap-2 cursor-pointer"
@@ -1042,23 +1129,37 @@ export default function App() {
             <div className="bg-gradient-to-tr from-pink-600 to-purple-600 p-2 rounded-lg shadow-lg shadow-pink-600/20">
               <Users className="h-5 w-5 text-white" />
             </div>
-            <h1 className="text-lg font-bold text-white tracking-tight">
+            <h1 className="text-lg font-bold text-gray-900 dark:text-white tracking-tight">
               Link<span className="text-pink-500">Up</span>
             </h1>
           </div>
 
           <div className="flex items-center gap-4">
+            {/* TEMA DEĞİŞTİRME BUTONU */}
+            <button
+              onClick={() => setDarkMode(!darkMode)}
+              className="p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            >
+              {darkMode ? (
+                <Sun className="h-5 w-5" />
+              ) : (
+                <Moon className="h-5 w-5" />
+              )}
+            </button>
+
             {user ? (
               <div className="flex items-center gap-3">
                 <div className="hidden md:block text-right">
-                  <div className="text-xs text-gray-400">Hi,</div>
-                  <div className="text-sm font-bold text-white max-w-[100px] truncate">
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    Hi,
+                  </div>
+                  <div className="text-sm font-bold text-gray-900 dark:text-white max-w-[100px] truncate">
                     {user.name}
                   </div>
                 </div>
                 <img
                   src={user.image}
-                  className="h-9 w-9 rounded-full object-cover border border-gray-600"
+                  className="h-9 w-9 rounded-full object-cover border border-gray-300 dark:border-gray-600"
                   title="Profile"
                 />
                 <button
@@ -1074,7 +1175,7 @@ export default function App() {
                     setEditingPost(null);
                     setShowPostModal(true);
                   }}
-                  className="hidden md:flex bg-white hover:bg-gray-200 text-gray-900 px-4 py-2 rounded-full text-sm font-bold items-center gap-2 transition-transform hover:scale-105"
+                  className="hidden md:flex bg-white dark:bg-white hover:bg-gray-100 text-gray-900 px-4 py-2 rounded-full text-sm font-bold items-center gap-2 transition-transform hover:scale-105 border border-gray-200 dark:border-transparent shadow-sm"
                 >
                   <PlusSquare className="h-4 w-4" /> Post Ad
                 </button>
@@ -1086,7 +1187,7 @@ export default function App() {
                     setAuthMode("login");
                     setShowAuthModal(true);
                   }}
-                  className="text-sm font-bold text-gray-300 hover:text-white px-3 py-2"
+                  className="text-sm font-bold text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white px-3 py-2"
                 >
                   Login
                 </button>
@@ -1105,70 +1206,36 @@ export default function App() {
         </div>
       </nav>
 
-      <div className="relative bg-gray-900 border-b border-gray-800">
+      <div className="relative bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 transition-colors duration-300">
         <div className="max-w-6xl mx-auto px-4 py-8">
-          {boostedPosts.length > 0 && (
-            <div className="mb-10 animate-in fade-in slide-in-from-top-4 duration-500">
-              <div className="flex items-center gap-2 mb-4">
-                <TrendingUp className="h-5 w-5 text-yellow-500" />
-                <h3 className="text-sm font-bold text-gray-300 uppercase tracking-wider">
-                  Spotlight
-                </h3>
-              </div>
-              <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
-                {boostedPosts.map((post) => (
-                  <div
-                    key={post.id}
-                    onClick={() => requireAuth(() => setSelectedProfile(post))}
-                    className="min-w-[280px] bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 p-4 rounded-xl cursor-pointer hover:border-pink-500 transition-all shadow-lg relative overflow-hidden group"
-                  >
-                    <div className="absolute top-0 right-0 bg-yellow-500 text-black text-[10px] font-bold px-2 py-1 rounded-bl-lg z-10">
-                      FEATURED
-                    </div>
-                    <div className="flex items-center gap-3 mb-3">
-                      <img
-                        src={post.image}
-                        className="h-12 w-12 rounded-full object-cover border-2 border-yellow-500/50"
-                      />
-                      <div>
-                        <h4 className="font-bold text-white text-sm truncate w-32">
-                          {post.name}
-                        </h4>
-                        <div className="text-xs text-gray-400 flex items-center gap-1">
-                          <MapPin className="h-3 w-3" /> {post.location}
-                        </div>
-                      </div>
-                    </div>
-                    <p className="text-xs text-gray-300 line-clamp-2 mb-3">
-                      {post.desc}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          {/* SPOTLIGHT (YENİ BİLEŞEN) */}
+          <Spotlight
+            posts={boostedPosts}
+            onProfileClick={(post) =>
+              requireAuth(() => setSelectedProfile(post))
+            }
+          />
 
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="relative group w-full md:w-auto">
-              <div className="relative flex bg-gray-950 rounded-xl items-center p-1 border border-gray-800 focus-within:border-pink-500 w-full md:w-96">
-                <Search className="h-4 w-4 text-gray-500 ml-3" />
+              <div className="relative flex bg-white dark:bg-gray-950 rounded-xl items-center p-1 border border-gray-200 dark:border-gray-800 focus-within:border-pink-500 w-full md:w-96 transition-colors">
+                <Search className="h-4 w-4 text-gray-400 ml-3" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search..."
-                  className="bg-transparent border-none text-white px-3 py-2 focus:ring-0 outline-none w-full placeholder:text-gray-600 text-sm"
-                  style={{ color: "white" }}
+                  className="bg-transparent border-none text-gray-900 dark:text-white px-3 py-2 focus:ring-0 outline-none w-full placeholder:text-gray-400 text-sm"
                 />
               </div>
             </div>
             <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
               <button
                 onClick={() => setFilter("ALL")}
-                className={`px-4 py-2 rounded-full text-xs font-bold border whitespace-nowrap ${
+                className={`px-4 py-2 rounded-full text-xs font-bold border whitespace-nowrap transition-colors ${
                   filter === "ALL"
-                    ? "bg-white text-black border-white"
-                    : "bg-gray-950 border-gray-700 text-gray-400 hover:text-white"
+                    ? "bg-gray-900 text-white dark:bg-white dark:text-black border-transparent"
+                    : "bg-white dark:bg-gray-950 border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500"
                 }`}
               >
                 All
@@ -1177,10 +1244,10 @@ export default function App() {
                 <button
                   key={cat.id}
                   onClick={() => setFilter(cat.id)}
-                  className={`px-4 py-2 rounded-full text-xs font-bold border whitespace-nowrap flex items-center gap-2 ${
+                  className={`px-4 py-2 rounded-full text-xs font-bold border whitespace-nowrap flex items-center gap-2 transition-colors ${
                     filter === cat.id
                       ? "bg-pink-600 border-pink-600 text-white"
-                      : "bg-gray-950 border-gray-700 text-gray-400 hover:text-white"
+                      : "bg-white dark:bg-gray-950 border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500"
                   }`}
                 >
                   {cat.label}
@@ -1195,8 +1262,10 @@ export default function App() {
         {loadingPosts ? (
           <div className="text-center py-20 text-gray-500">Loading...</div>
         ) : filteredPosts.length === 0 ? (
-          <div className="text-center py-20 border border-dashed border-gray-800 rounded-2xl">
-            <p className="text-gray-400 mb-4">No ads found.</p>
+          <div className="text-center py-20 border border-dashed border-gray-300 dark:border-gray-800 rounded-2xl">
+            <p className="text-gray-500 dark:text-gray-400 mb-4">
+              No ads found.
+            </p>
             <button
               onClick={() => requireAuth(() => setShowPostModal(true))}
               className="text-pink-500 font-bold hover:underline"
@@ -1210,10 +1279,10 @@ export default function App() {
               <div
                 key={post.id}
                 onClick={() => requireAuth(() => setSelectedProfile(post))}
-                className={`relative bg-gray-900 rounded-2xl p-5 border transition-all hover:-translate-y-1 hover:shadow-xl cursor-pointer flex flex-col group ${
+                className={`relative bg-white dark:bg-gray-900 rounded-2xl p-5 border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer flex flex-col group ${
                   post.boosted
-                    ? "border-pink-500/50 shadow-lg shadow-pink-900/10"
-                    : "border-gray-800 hover:border-gray-700"
+                    ? "border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.1)]"
+                    : "border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700"
                 }`}
               >
                 {user && user.id === post.ownerId && (
@@ -1223,16 +1292,17 @@ export default function App() {
                         e.stopPropagation();
                         handleDelete(post.id);
                       }}
-                      className="p-1.5 bg-gray-800 text-gray-400 hover:text-red-400 rounded border border-gray-700 hover:bg-gray-700"
+                      className="p-1.5 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-red-500 rounded border border-gray-200 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700"
                     >
                       <Trash2 className="h-3 w-3" />
                     </button>
                   </div>
                 )}
+
                 <div className="absolute -top-3 left-5 flex gap-2">
                   {post.boosted && (
-                    <div className="bg-pink-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">
-                      <Zap className="h-3 w-3 fill-white" /> PROMOTED
+                    <div className="bg-yellow-500 text-black text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">
+                      <Zap className="h-3 w-3 fill-black" /> PROMOTED
                     </div>
                   )}
                   {post.urgent && (
@@ -1241,16 +1311,27 @@ export default function App() {
                     </div>
                   )}
                 </div>
+
                 <div className="flex items-center gap-3 mb-4 mt-2">
                   <img
                     src={post.image}
-                    className="h-11 w-11 rounded-full object-cover border border-gray-700"
+                    className={`h-11 w-11 rounded-full object-cover border-2 ${
+                      post.boosted
+                        ? "border-yellow-500"
+                        : "border-gray-200 dark:border-gray-700"
+                    }`}
                   />
                   <div>
-                    <h3 className="font-bold text-white text-sm flex items-center gap-1">
-                      {post.name}{" "}
+                    <h3
+                      className={`font-bold text-sm flex items-center gap-1 ${
+                        post.boosted
+                          ? "text-yellow-600 dark:text-yellow-500"
+                          : "text-gray-900 dark:text-white"
+                      }`}
+                    >
+                      {post.name}
                       {post.verified && (
-                        <CheckCircle className="h-3.5 w-3.5 text-blue-400" />
+                        <CheckCircle className="h-3.5 w-3.5 text-blue-500" />
                       )}
                     </h3>
                     <div className="flex items-center gap-1 text-xs text-gray-500">
@@ -1259,15 +1340,15 @@ export default function App() {
                   </div>
                 </div>
                 <div className="mb-3">
-                  <span className="text-[10px] font-bold px-2 py-1 rounded border bg-gray-800 border-gray-700 text-gray-300">
+                  <span className="text-[10px] font-bold px-2 py-1 rounded border bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300">
                     {CATEGORIES.find((c) => c.id === post.type)?.label}
                   </span>
                 </div>
-                <p className="text-gray-300 text-sm leading-relaxed mb-4 flex-grow line-clamp-3">
+                <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed mb-4 flex-grow line-clamp-3">
                   {post.desc}
                 </p>
-                <div className="grid grid-cols-2 gap-2 pt-4 border-t border-gray-800/50 mt-auto">
-                  <button className="bg-gray-800 hover:bg-gray-700 text-white py-2 rounded-lg text-xs font-bold transition-colors">
+                <div className="grid grid-cols-2 gap-2 pt-4 border-t border-gray-100 dark:border-gray-800 mt-auto">
+                  <button className="bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-white py-2 rounded-lg text-xs font-bold transition-colors">
                     View Profile
                   </button>
                   <button
@@ -1319,24 +1400,26 @@ export default function App() {
         />
       )}
       {selectedProfile && (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[70] flex items-center justify-center p-4">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-sm relative p-6">
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/90 backdrop-blur-sm z-[70] flex items-center justify-center p-4 transition-colors">
+          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl w-full max-w-sm relative p-6 shadow-2xl">
             <button
               onClick={() => setSelectedProfile(null)}
-              className="absolute top-4 right-4 text-white"
+              className="absolute top-4 right-4 text-gray-500 dark:text-white hover:text-gray-800 dark:hover:text-gray-300"
             >
               <X />
             </button>
             <div className="text-center mt-8">
               <img
                 src={selectedProfile.image}
-                className="h-24 w-24 rounded-full mx-auto mb-4"
+                className="h-24 w-24 rounded-full mx-auto mb-4 border-4 border-white dark:border-gray-800 shadow-lg"
               />
-              <h2 className="text-2xl text-white font-bold">
+              <h2 className="text-2xl text-gray-900 dark:text-white font-bold">
                 {selectedProfile.name}
               </h2>
-              <p className="text-gray-400 mb-4">{selectedProfile.desc}</p>
-              <button className="w-full bg-pink-600 text-white py-3 rounded-xl font-bold">
+              <p className="text-gray-500 dark:text-gray-400 mb-4">
+                {selectedProfile.desc}
+              </p>
+              <button className="w-full bg-pink-600 text-white py-3 rounded-xl font-bold shadow-lg">
                 Message
               </button>
             </div>
@@ -1344,37 +1427,42 @@ export default function App() {
         </div>
       )}
       {activeChat && (
-        <div className="fixed bottom-0 right-0 md:right-4 w-full md:w-80 h-[400px] bg-gray-900 border border-gray-800 md:rounded-t-2xl z-[100] flex flex-col">
-          <div className="p-4 border-b border-gray-800 flex justify-between bg-gray-950">
-            <span className="text-white font-bold">{activeChat.name}</span>
+        <div className="fixed bottom-0 right-0 md:right-4 w-full md:w-80 h-[400px] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 md:rounded-t-2xl z-[100] flex flex-col shadow-2xl">
+          <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex justify-between bg-gray-50 dark:bg-gray-950 rounded-t-2xl">
+            <span className="text-gray-900 dark:text-white font-bold">
+              {activeChat.name}
+            </span>
             <button
               onClick={() => setActiveChat(null)}
-              className="text-gray-500"
+              className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
             >
               <X />
             </button>
           </div>
-          <div className="flex-1 bg-gray-900/90 p-4 text-center text-gray-500">
+          <div className="flex-1 bg-gray-50 dark:bg-gray-900/90 p-4 text-center text-gray-500">
             Start chatting...
           </div>
-          <div className="p-3 border-t border-gray-800">
+          <div className="p-3 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
             <input
-              className="w-full bg-gray-950 rounded-full px-4 py-2 text-white outline-none border border-gray-800"
-              style={{ color: "white", backgroundColor: "#1f2937" }}
+              className="w-full bg-gray-100 dark:bg-gray-950 rounded-full px-4 py-2 text-gray-900 dark:text-white outline-none border border-gray-200 dark:border-gray-800 placeholder:text-gray-400 dark:placeholder:text-gray-600"
               placeholder="Message..."
             />
           </div>
         </div>
       )}
       {showPremiumModal && (
-        <div className="fixed inset-0 bg-black/90 flex items-center justify-center">
-          <div className="bg-gray-900 p-8 rounded-2xl border border-gray-800 text-center">
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/90 flex items-center justify-center backdrop-blur-sm">
+          <div className="bg-white dark:bg-gray-900 p-8 rounded-2xl border border-gray-200 dark:border-gray-800 text-center shadow-2xl">
             <Crown className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
-            <h2 className="text-2xl text-white font-bold mb-2">Go Premium</h2>
-            <p className="text-gray-400 mb-6">Get featured & more.</p>
+            <h2 className="text-2xl text-gray-900 dark:text-white font-bold mb-2">
+              Go Premium
+            </h2>
+            <p className="text-gray-500 dark:text-gray-400 mb-6">
+              Get featured & more.
+            </p>
             <button
               onClick={() => setShowPremiumModal(false)}
-              className="bg-gray-800 text-white px-6 py-2 rounded-lg"
+              className="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white px-6 py-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
             >
               Close
             </button>
@@ -1389,28 +1477,27 @@ function AuthModal({ mode, setMode, onClose, onSubmit }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   return (
-    <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-sm p-8 relative shadow-2xl">
+    <div className="fixed inset-0 bg-black/50 dark:bg-black/90 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl w-full max-w-sm p-8 relative shadow-2xl">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-500 hover:text-white"
+          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 dark:hover:text-white"
         >
           <X className="h-5 w-5" />
         </button>
-        <h2 className="text-2xl font-bold text-white text-center mb-6">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white text-center mb-6">
           {mode === "login" ? "Welcome Back" : "Join LinkUp"}
         </h2>
         <form
           onSubmit={(e) => onSubmit(e, email, password)}
           className="space-y-4"
         >
-          {/* ZORLA BEYAZ YAZI */}
+          {/* ZORLA BEYAZ YAZI KALDIRILDI (Otomatik Tema Rengi İçin) */}
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-pink-500"
-            style={{ color: "white", backgroundColor: "#1f2937" }}
+            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none focus:border-pink-500"
             placeholder="Email"
             required
           />
@@ -1418,19 +1505,18 @@ function AuthModal({ mode, setMode, onClose, onSubmit }) {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-pink-500"
-            style={{ color: "white", backgroundColor: "#1f2937" }}
+            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none focus:border-pink-500"
             placeholder="Password"
             required
           />
-          <button className="w-full bg-pink-600 hover:bg-pink-700 text-white font-bold py-3.5 rounded-xl">
+          <button className="w-full bg-pink-600 hover:bg-pink-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-pink-600/20">
             {mode === "login" ? "Login" : "Sign Up"}
           </button>
         </form>
         <div className="mt-6 text-center text-sm">
           <button
             onClick={() => setMode(mode === "login" ? "signup" : "login")}
-            className="text-pink-500 font-bold hover:underline"
+            className="text-pink-600 font-bold hover:underline"
           >
             {mode === "login" ? "Create Account" : "Login instead"}
           </button>
@@ -1449,23 +1535,23 @@ function OnboardingModal({ onComplete }) {
   });
   return (
     <div className="fixed inset-0 bg-black/95 z-[80] flex items-center justify-center p-4">
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-md p-8 text-center">
-        <h2 className="text-2xl font-bold text-white mb-6">Setup Profile</h2>
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl w-full max-w-md p-8 text-center shadow-2xl">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+          Setup Profile
+        </h2>
         <img
           src={data.image}
-          className="h-24 w-24 rounded-full mx-auto mb-4 bg-gray-800 border-4 border-gray-800"
+          className="h-24 w-24 rounded-full mx-auto mb-4 bg-gray-100 dark:bg-gray-800 border-4 border-gray-200 dark:border-gray-800"
         />
-        {/* ZORLA BEYAZ YAZI */}
         <input
           value={data.name}
           onChange={(e) => setData({ ...data, name: e.target.value })}
-          className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white text-sm outline-none mb-6"
-          style={{ color: "white", backgroundColor: "#1f2937" }}
+          className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none mb-6"
           placeholder="Display Name"
         />
         <button
           onClick={() => onComplete(data)}
-          className="w-full bg-pink-600 text-white font-bold py-3.5 rounded-xl"
+          className="w-full bg-pink-600 text-white font-bold py-3.5 rounded-xl shadow-lg"
         >
           Finish
         </button>
@@ -1483,21 +1569,22 @@ function PostModal({ onClose, onSubmit }) {
     isUrgent: false,
   });
   return (
-    <div className="fixed inset-0 bg-black/80 z-[80] flex items-center justify-center p-4">
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-md p-6">
+    <div className="fixed inset-0 bg-black/50 dark:bg-black/80 z-[80] flex items-center justify-center p-4 backdrop-blur-sm">
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl w-full max-w-md p-6 shadow-2xl">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-500 hover:text-white"
+          className="absolute top-4 right-4 text-gray-500 hover:text-gray-900 dark:hover:text-white"
         >
           <X />
         </button>
-        <h3 className="text-xl font-bold text-white mb-6">New Post</h3>
+        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
+          New Post
+        </h3>
         <div className="space-y-4">
           <select
             value={formData.type}
             onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-            className="w-full bg-gray-950 border border-gray-700 rounded-xl px-4 py-3 text-white text-sm outline-none"
-            style={{ color: "white", backgroundColor: "#1f2937" }}
+            className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none"
           >
             {CATEGORIES.map((c) => (
               <option key={c.id} value={c.id}>
@@ -1505,39 +1592,37 @@ function PostModal({ onClose, onSubmit }) {
               </option>
             ))}
           </select>
-          {/* ZORLA BEYAZ YAZI */}
+
           <input
             value={formData.location}
             onChange={(e) =>
               setFormData({ ...formData, location: e.target.value })
             }
             placeholder="Location"
-            className="w-full bg-gray-950 border border-gray-700 rounded-xl px-4 py-3 text-white text-sm outline-none"
-            style={{ color: "white", backgroundColor: "#1f2937" }}
+            className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none"
           />
-          {/* ZORLA BEYAZ YAZI */}
+
           <textarea
             rows="3"
             value={formData.desc}
             onChange={(e) => setFormData({ ...formData, desc: e.target.value })}
             placeholder="Details..."
-            className="w-full bg-gray-950 border border-gray-700 rounded-xl px-4 py-3 text-white text-sm outline-none"
-            style={{ color: "white", backgroundColor: "#1f2937" }}
+            className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none"
           ></textarea>
-          <div className="flex gap-2 text-white text-sm font-bold">
+          <div className="flex gap-2 text-sm font-bold">
             <div
               onClick={() =>
                 setFormData({ ...formData, isBoosted: !formData.isBoosted })
               }
-              className={`flex-1 border p-3 rounded-xl cursor-pointer flex items-center gap-2 ${
+              className={`flex-1 border p-3 rounded-xl cursor-pointer flex items-center gap-2 transition-colors ${
                 formData.isBoosted
-                  ? "border-pink-500 bg-pink-900/20"
-                  : "border-gray-700"
+                  ? "border-pink-500 bg-pink-50 dark:bg-pink-900/20 text-pink-600 dark:text-white"
+                  : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-white"
               }`}
             >
               <CheckCircle
                 className={`h-4 w-4 ${
-                  formData.isBoosted ? "text-pink-500" : "text-gray-600"
+                  formData.isBoosted ? "text-pink-500" : "text-gray-400"
                 }`}
               />{" "}
               Pin Ad
@@ -1546,15 +1631,15 @@ function PostModal({ onClose, onSubmit }) {
               onClick={() =>
                 setFormData({ ...formData, isUrgent: !formData.isUrgent })
               }
-              className={`flex-1 border p-3 rounded-xl cursor-pointer flex items-center gap-2 ${
+              className={`flex-1 border p-3 rounded-xl cursor-pointer flex items-center gap-2 transition-colors ${
                 formData.isUrgent
-                  ? "border-red-500 bg-red-900/20"
-                  : "border-gray-700"
+                  ? "border-red-500 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-white"
+                  : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-white"
               }`}
             >
               <CheckCircle
                 className={`h-4 w-4 ${
-                  formData.isUrgent ? "text-red-500" : "text-gray-600"
+                  formData.isUrgent ? "text-red-500" : "text-gray-400"
                 }`}
               />{" "}
               Urgent
@@ -1562,7 +1647,7 @@ function PostModal({ onClose, onSubmit }) {
           </div>
           <button
             onClick={() => onSubmit(formData)}
-            className="w-full bg-white text-black font-bold py-3 rounded-xl"
+            className="w-full bg-gray-900 dark:bg-white text-white dark:text-black font-bold py-3 rounded-xl shadow-lg"
           >
             Post Now
           </button>
