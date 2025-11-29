@@ -78,9 +78,9 @@ const TailwindCDN = () => (
   </>
 );
 
-/* --- CLOUDINARY AYARLARI (DÜZELTİLDİ) --- */
+/* --- CLOUDINARY AYARLARI --- */
 const CLOUDINARY_CONFIG = {
-  cloudName: "dqoh1mjjk", // <-- BURASI DÜZELTİLDİ
+  cloudName: "dqoh1mjjk",
   uploadPreset: "yxdnini8",
 };
 
@@ -112,6 +112,28 @@ const CATEGORIES = [
   { id: "SERVICE", label: "Services 📸", color: "orange" },
 ];
 
+/* --- HATA MESAJI ÇEVİRİCİ --- */
+const getFriendlyErrorMessage = (errorCode) => {
+  switch (errorCode) {
+    case "auth/email-already-in-use":
+      return "Bu e-posta adresi zaten kullanımda.";
+    case "auth/invalid-email":
+      return "Geçersiz e-posta adresi.";
+    case "auth/user-not-found":
+      return "Böyle bir kullanıcı bulunamadı.";
+    case "auth/wrong-password":
+      return "Şifre hatalı.";
+    case "auth/weak-password":
+      return "Şifre çok zayıf (en az 6 karakter).";
+    case "auth/too-many-requests":
+      return "Çok fazla deneme yaptınız. Biraz bekleyin.";
+    case "auth/network-request-failed":
+      return "Ağ hatası. İnternet bağlantınızı kontrol edin.";
+    default:
+      return "Bir hata oluştu: " + errorCode;
+  }
+};
+
 /* --- RESİM YÜKLEME FONKSİYONU --- */
 const uploadImageToCloudinary = async (file) => {
   if (!file) return null;
@@ -129,7 +151,6 @@ const uploadImageToCloudinary = async (file) => {
     return data.secure_url;
   } catch (error) {
     console.error("Resim yükleme hatası:", error);
-    alert("Resim yüklenemedi. Lütfen tekrar deneyin.");
     return null;
   }
 };
@@ -139,7 +160,7 @@ const generateFakeData = async () => {
   alert("⚠️ Fake Data: Kodda mevcut.");
 };
 
-// --- NAV ITEM COMPONENT (ÜST & ALT MENÜ İÇİN ORTAK) ---
+// --- NAV ITEM COMPONENT ---
 const NavItem = ({
   tab,
   icon: Icon,
@@ -272,39 +293,40 @@ const Spotlight = ({ posts, onProfileClick }) => {
   );
 };
 
-// --- CHAT LIST BİLEŞENİ (DÜZELTİLDİ) ---
+// --- CHAT LIST BİLEŞENİ ---
 const MessagesView = ({ user, setActiveChat }) => {
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) return;
-    // Sadece kullanıcının dahil olduğu sohbetleri getir
+
     const q = query(
       collection(db, "chats"),
-      where("participants", "array-contains", user.uid),
-      orderBy("lastUpdated", "desc")
+      where("participants", "array-contains", user.uid)
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const chatList = snapshot.docs.map((doc) => {
         const data = doc.data();
-        // Karşı tarafın ID'sini ve bilgilerini bul
         const otherUserId = data.participants.find((id) => id !== user.uid);
         const otherUser = data.users[otherUserId] || {
-          name: "Unknown User",
+          name: "Unknown",
           image: "https://via.placeholder.com/150",
         };
 
         return {
-          id: doc.id, // Chat Document ID
-          ownerId: otherUserId, // Karşı tarafın ID'si (önemli)
+          id: doc.id,
+          ownerId: otherUserId,
           name: otherUser.name,
           image: otherUser.image,
           lastMessage: data.lastMessage,
           time: data.lastUpdated,
         };
       });
+
+      chatList.sort((a, b) => (b.time?.seconds || 0) - (a.time?.seconds || 0));
+
       setChats(chatList);
       setLoading(false);
     });
@@ -353,7 +375,7 @@ const MessagesView = ({ user, setActiveChat }) => {
                             hour: "2-digit",
                             minute: "2-digit",
                           })
-                      : "Just now"}
+                      : ""}
                   </span>
                 </div>
                 <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
@@ -368,11 +390,10 @@ const MessagesView = ({ user, setActiveChat }) => {
   );
 };
 
-// --- CHAT MODAL (DÜZELTİLDİ) ---
+// --- CHAT MODAL ---
 const ChatModal = ({ activeChat, setActiveChat, user }) => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
-  // Chat ID: İki kullanıcının ID'sini alfabetik sıraya göre birleştirerek benzersiz ID oluşturur
   const chatId = [user.uid, activeChat.ownerId].sort().join("_");
   const messagesEndRef = useRef(null);
 
@@ -400,14 +421,12 @@ const ChatModal = ({ activeChat, setActiveChat, user }) => {
     const messageText = newMessage;
     setNewMessage("");
 
-    // 1. Mesajı ekle
     await addDoc(collection(db, "chats", chatId, "messages"), {
       text: messageText,
       senderId: user.uid,
       createdAt: serverTimestamp(),
     });
 
-    // 2. Ana sohbet kaydını güncelle (yoksa oluştur)
     const chatRef = doc(db, "chats", chatId);
     await setDoc(
       chatRef,
@@ -485,7 +504,7 @@ const ChatModal = ({ activeChat, setActiveChat, user }) => {
   );
 };
 
-// --- PROFİL SAYFASI BİLEŞENİ (DÜZELTİLDİ) ---
+// --- PROFİL SAYFASI ---
 const ProfileView = ({ user, setShowOnboarding, handleLogout, posts }) => {
   const myPosts = posts.filter((p) => p.ownerId === user.uid);
 
@@ -686,20 +705,14 @@ export default function App() {
     fetchPosts();
   }, []);
 
-  const handleAuthSubmit = async (e, email, password) => {
-    e.preventDefault();
-    try {
-      if (authMode === "login") {
-        await signInWithEmailAndPassword(auth, email, password);
-        setShowAuthModal(false);
-      } else {
-        await createUserWithEmailAndPassword(auth, email, password);
-        setShowAuthModal(false);
-        setShowOnboarding(true);
-      }
-    } catch (error) {
-      alert("Hata: " + error.message);
+  const handleAuthSubmit = async (email, password, mode) => {
+    if (mode === "login") {
+      await signInWithEmailAndPassword(auth, email, password);
+    } else {
+      await createUserWithEmailAndPassword(auth, email, password);
     }
+    setShowAuthModal(false);
+    if (mode === "signup") setShowOnboarding(true);
   };
 
   const handleCompleteOnboarding = async (profileData) => {
@@ -723,7 +736,7 @@ export default function App() {
           uid: auth.currentUser.uid,
         },
         { merge: true }
-      ); // Merge true to update existing doc if editing
+      );
       window.location.reload();
     }
     setShowOnboarding(false);
@@ -830,7 +843,7 @@ export default function App() {
             </h1>
           </div>
 
-          {/* DESKTOP MENÜ */}
+          {/* DESKTOP MENÜ (YENİ - Sağ Üstte) */}
           <div className="hidden md:flex items-center gap-6">
             <NavItem
               tab="feed"
@@ -888,11 +901,12 @@ export default function App() {
               </button>
             )}
             {user && (
-              <div className="hidden md:flex items-center gap-3">
+              <div className="hidden md:flex items-center gap-3 ml-4">
                 <img
                   src={user.image}
                   className="h-8 w-8 rounded-full object-cover border border-gray-600"
                 />
+                <span className="text-sm font-bold">{user.name}</span>
                 <button
                   onClick={handleLogout}
                   className="text-red-500 hover:bg-red-500/10 p-2 rounded-full transition-colors"
@@ -1078,6 +1092,7 @@ export default function App() {
           label="Home"
           activeTab={activeTab}
           setActiveTab={setActiveTab}
+          mobileOnly
         />
         <NavItem
           tab="ai-studio"
@@ -1086,6 +1101,7 @@ export default function App() {
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           requireAuth={requireAuth}
+          mobileOnly
         />
         <div className="relative -top-5">
           <button
@@ -1107,6 +1123,7 @@ export default function App() {
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           requireAuth={requireAuth}
+          mobileOnly
         />
         <NavItem
           tab="profile"
@@ -1115,6 +1132,7 @@ export default function App() {
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           requireAuth={requireAuth}
+          mobileOnly
         />
       </div>
 
@@ -1253,6 +1271,8 @@ export default function App() {
 function AuthModal({ mode, setMode, onClose, onSubmit }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
   return (
     <div className="fixed inset-0 bg-black/50 dark:bg-black/90 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
       <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl w-full max-w-sm p-8 relative shadow-2xl">
@@ -1265,8 +1285,23 @@ function AuthModal({ mode, setMode, onClose, onSubmit }) {
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white text-center mb-6">
           {mode === "login" ? "Welcome Back" : "Join LinkUp"}
         </h2>
+
+        {error && (
+          <div className="bg-red-500/10 border border-red-500 text-red-500 p-3 rounded-xl mb-4 text-sm">
+            {error}
+          </div>
+        )}
+
         <form
-          onSubmit={(e) => onSubmit(e, email, password)}
+          onSubmit={async (e) => {
+            e.preventDefault();
+            setError("");
+            try {
+              await onSubmit(email, password, mode);
+            } catch (err) {
+              setError(getFriendlyErrorMessage(err.code));
+            }
+          }}
           className="space-y-4"
         >
           <input
@@ -1293,7 +1328,10 @@ function AuthModal({ mode, setMode, onClose, onSubmit }) {
         </form>
         <div className="mt-6 text-center text-sm">
           <button
-            onClick={() => setMode(mode === "login" ? "signup" : "login")}
+            onClick={() => {
+              setError("");
+              setMode(mode === "login" ? "signup" : "login");
+            }}
             className="text-pink-600 font-bold hover:underline"
           >
             {mode === "login" ? "Create Account" : "Login instead"}
