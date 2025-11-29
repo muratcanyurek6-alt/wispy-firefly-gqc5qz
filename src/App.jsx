@@ -28,31 +28,21 @@ import {
 import {
   MapPin,
   Users,
-  Camera,
   PlusSquare,
   Search,
   CheckCircle,
   Star,
   Zap,
   X,
-  Building2,
   Edit2,
   Trash2,
   Loader2,
-  Mail,
-  Lock,
-  ArrowRight,
   MessageCircle,
-  ShieldCheck,
-  Upload,
-  Sparkles,
   Link as LinkIcon,
   Instagram,
   Twitter,
   Crown,
   Send,
-  AlertCircle,
-  TrendingUp,
   Flame,
   Database,
   LogOut,
@@ -61,7 +51,7 @@ import {
   Home,
   Wand2,
   User,
-  Settings,
+  TrendingUp,
 } from "lucide-react";
 
 // --- TASARIM KURTARICI (CDN) ---
@@ -74,14 +64,15 @@ const TailwindCDN = () => (
     <style>{`
       .no-scrollbar::-webkit-scrollbar { display: none; }
       .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom); }
     `}</style>
   </>
 );
 
-/* --- CLOUDINARY AYARLARI --- */
+/* --- CLOUDINARY AYARLARI (SENİN VERDİĞİN DOĞRU BİLGİLER) --- */
 const CLOUDINARY_CONFIG = {
-  cloudName: "dqoh1mijk",
-  uploadPreset: "yxdnini8",
+  cloudName: "dqoh1mjjk", // DÜZELTİLDİ (Çift 'j')
+  uploadPreset: "yxdnini8", // DÜZELTİLDİ (Eski çalışan preset)
 };
 
 /* --- FIREBASE AYARLARI --- */
@@ -95,7 +86,7 @@ const firebaseConfig = {
   measurementId: "G-QNG54EJ9R5",
 };
 
-const apiKey = "";
+const apiKey = ""; // Gemini API Key
 
 /* --- SİSTEM BAŞLATILIYOR --- */
 const app = initializeApp(firebaseConfig);
@@ -129,13 +120,14 @@ const uploadImageToCloudinary = async (file) => {
     return data.secure_url;
   } catch (error) {
     console.error("Resim yükleme hatası:", error);
+    alert("Resim yüklenemedi. Ayarları kontrol et.");
     return null;
   }
 };
 
 /* --- SAHTE VERİ OLUŞTURUCU --- */
 const generateFakeData = async () => {
-  alert("⚠️ Fake Data: Kodda mevcut.");
+  alert("⚠️ Fake Data özelliği kodda mevcut ama buton gizli.");
 };
 
 // --- NAV ITEM COMPONENT ---
@@ -148,7 +140,6 @@ const NavItem = ({
   requireAuth,
   setEditingPost,
   setShowPostModal,
-  setShowOnboarding,
 }) => (
   <button
     onClick={() => {
@@ -157,14 +148,9 @@ const NavItem = ({
           setEditingPost(null);
           setShowPostModal(true);
         });
-      } else if (tab === "profile") {
+      } else if (tab === "profile" || tab === "chat") {
         requireAuth(() => {
-          setActiveTab("profile");
-          window.scrollTo(0, 0);
-        });
-      } else if (tab === "chat") {
-        requireAuth(() => {
-          setActiveTab("chat");
+          setActiveTab(tab);
           window.scrollTo(0, 0);
         });
       } else {
@@ -188,12 +174,11 @@ const NavItem = ({
 const Spotlight = ({ posts, onProfileClick }) => {
   const scrollRef = React.useRef(null);
   const [isPaused, setIsPaused] = useState(false);
-  const loopPosts = [...posts, ...posts, ...posts];
+  const loopPosts = posts.length > 0 ? [...posts, ...posts, ...posts] : [];
 
   useEffect(() => {
     const scrollContainer = scrollRef.current;
     if (!scrollContainer) return;
-    let scrollAmount = 0;
     const scrollStep = 1;
 
     const scrollInterval = setInterval(() => {
@@ -260,14 +245,14 @@ const Spotlight = ({ posts, onProfileClick }) => {
   );
 };
 
-// --- CHAT LIST BİLEŞENİ (YENİ - Mesajları Listeler) ---
+// --- MESSAGES VIEW (Chat Listesi) ---
 const MessagesView = ({ user, setActiveChat }) => {
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) return;
-    // İçinde kullanıcının ID'si geçen sohbetleri bul
+    // INDEX HATASI ALIRSAN: Konsoldaki linke tıkla!
     const q = query(
       collection(db, "chats"),
       where("participants", "array-contains", user.uid),
@@ -277,7 +262,6 @@ const MessagesView = ({ user, setActiveChat }) => {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const chatList = snapshot.docs.map((doc) => {
         const data = doc.data();
-        // Karşı tarafın ID'sini bul
         const otherUserId = data.participants.find((id) => id !== user.uid);
         const otherUser = data.users[otherUserId] || {
           name: "Unknown",
@@ -286,7 +270,7 @@ const MessagesView = ({ user, setActiveChat }) => {
 
         return {
           id: doc.id,
-          ownerId: otherUserId, // ChatModal için gerekli
+          ownerId: otherUserId,
           name: otherUser.name,
           image: otherUser.image,
           lastMessage: data.lastMessage,
@@ -331,12 +315,10 @@ const MessagesView = ({ user, setActiveChat }) => {
                     {chat.name}
                   </h3>
                   <span className="text-[10px] text-gray-400">
-                    {chat.time
-                      ?.toDate()
-                      .toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                    {chat.time?.toDate().toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
                   </span>
                 </div>
                 <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
@@ -351,7 +333,7 @@ const MessagesView = ({ user, setActiveChat }) => {
   );
 };
 
-// --- CHAT MODAL (GÜNCELLENDİ - Veritabanına Kayıt Yapar) ---
+// --- CHAT MODAL (DÜZELTİLDİ: Inline Style Silindi & Timestamp Eklendi) ---
 const ChatModal = ({ activeChat, setActiveChat, user }) => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
@@ -380,16 +362,16 @@ const ChatModal = ({ activeChat, setActiveChat, user }) => {
     if (!newMessage.trim()) return;
 
     const messageText = newMessage;
-    setNewMessage(""); // UI'ı hemen temizle
+    setNewMessage("");
 
-    // 1. Mesajı Alt Koleksiyona Ekle
+    // 1. Mesajı Ekle
     await addDoc(collection(db, "chats", chatId, "messages"), {
       text: messageText,
       senderId: user.uid,
       createdAt: serverTimestamp(),
     });
 
-    // 2. Sohbet Özetini Güncelle (Ana Liste İçin)
+    // 2. Sohbeti Güncelle (CRITICAL FIX: lastUpdated ve createdAt eklendi)
     const chatRef = doc(db, "chats", chatId);
     await setDoc(
       chatRef,
@@ -404,6 +386,7 @@ const ChatModal = ({ activeChat, setActiveChat, user }) => {
         },
         lastMessage: messageText,
         lastUpdated: serverTimestamp(),
+        createdAt: serverTimestamp(),
       },
       { merge: true }
     );
@@ -411,7 +394,8 @@ const ChatModal = ({ activeChat, setActiveChat, user }) => {
 
   return (
     <div className="fixed bottom-0 right-0 md:right-4 w-full md:w-80 h-[100dvh] md:h-[500px] bg-white dark:bg-gray-900 border-t md:border border-gray-200 dark:border-gray-800 md:rounded-t-2xl z-[100] flex flex-col shadow-2xl">
-      <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex justify-between bg-white dark:bg-gray-900 md:rounded-t-2xl items-center">
+      {/* Header */}
+      <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex justify-between bg-white dark:bg-gray-900 md:rounded-t-2xl items-center safe-area-top">
         <div className="flex items-center gap-3">
           <img
             src={activeChat.image}
@@ -429,6 +413,7 @@ const ChatModal = ({ activeChat, setActiveChat, user }) => {
         </button>
       </div>
 
+      {/* Mesajlar */}
       <div className="flex-1 bg-gray-50 dark:bg-gray-950 p-4 overflow-y-auto flex flex-col gap-3">
         {messages.map((msg) => (
           <div
@@ -445,6 +430,7 @@ const ChatModal = ({ activeChat, setActiveChat, user }) => {
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Input */}
       <form
         onSubmit={handleSendMessage}
         className="p-3 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex gap-2 safe-area-bottom"
@@ -452,7 +438,7 @@ const ChatModal = ({ activeChat, setActiveChat, user }) => {
         <input
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
-          className="w-full bg-gray-100 dark:bg-gray-950 rounded-full px-4 py-3 text-gray-900 dark:text-white outline-none border border-gray-200 dark:border-gray-800 placeholder:text-gray-400 dark:placeholder:text-gray-600"
+          className="w-full bg-gray-100 dark:bg-gray-950 rounded-full px-4 py-3 text-gray-900 dark:text-white outline-none border border-gray-200 dark:border-gray-800 placeholder:text-gray-400 dark:placeholder:text-gray-600 focus:border-pink-500 transition-colors"
           placeholder="Type a message..."
           autoFocus
         />
@@ -467,7 +453,7 @@ const ChatModal = ({ activeChat, setActiveChat, user }) => {
   );
 };
 
-// --- PROFİL SAYFASI BİLEŞENİ ---
+// --- PROFILE VIEW ---
 const ProfileView = ({ user, setShowOnboarding, handleLogout, posts }) => {
   const myPosts = posts.filter((p) => p.ownerId === user.uid);
 
@@ -558,15 +544,13 @@ const ProfileView = ({ user, setShowOnboarding, handleLogout, posts }) => {
   );
 };
 
-// --- AI STUDIO BİLEŞENİ ---
-const AIStudio = ({ user, requireAuth }) => {
-  return (
-    <div className="p-4 text-center text-gray-500 flex items-center justify-center h-[50vh]">
-      AI Studio Coming Soon...
-    </div>
-  );
-};
+const AIStudio = () => (
+  <div className="p-4 text-center text-gray-500 flex items-center justify-center h-[50vh]">
+    AI Studio Coming Soon...
+  </div>
+);
 
+// --- MAIN APP ---
 export default function App() {
   const [activeTab, setActiveTab] = useState("feed");
   const [posts, setPosts] = useState([]);
@@ -582,7 +566,6 @@ export default function App() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showPostModal, setShowPostModal] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
-  const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState(null);
   const [activeChat, setActiveChat] = useState(null);
   const [editingPost, setEditingPost] = useState(null);
@@ -792,7 +775,7 @@ export default function App() {
     >
       <TailwindCDN />
 
-      {/* ÜST NAVBAR */}
+      {/* NAVBAR */}
       <nav className="sticky top-0 z-40 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800 transition-colors duration-300">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           <div
@@ -835,9 +818,7 @@ export default function App() {
         </div>
       </nav>
 
-      {/* İÇERİK YÖNETİMİ */}
-
-      {/* 1. FEED SAYFASI */}
+      {/* İÇERİK */}
       {activeTab === "feed" && (
         <>
           <div className="relative bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 transition-colors duration-300 pt-4 pb-4">
@@ -982,15 +963,10 @@ export default function App() {
         </>
       )}
 
-      {/* 2. AI STUDIO */}
       {activeTab === "ai-studio" && <AIStudio />}
-
-      {/* 3. CHAT SAYFASI (GÜNCELLENDİ - Mesajları Listeliyor) */}
       {activeTab === "chat" && (
         <MessagesView user={user} setActiveChat={setActiveChat} />
       )}
-
-      {/* 4. PROFIL SAYFASI */}
       {activeTab === "profile" && user && (
         <ProfileView
           user={user}
@@ -1048,7 +1024,7 @@ export default function App() {
         />
       </div>
 
-      {/* MODALLAR */}
+      {/* MODALLAR (DÜZELTİLDİ: Inline Style SİLİNDİ) */}
       {showAuthModal && (
         <AuthModal
           mode={authMode}
@@ -1179,7 +1155,7 @@ export default function App() {
   );
 }
 
-// --- YARDIMCI BİLEŞENLER (Modallar vb. aynı kalıyor, sadece stilleri koruduk) ---
+// --- DÜZELTİLMİŞ MODALLAR (INLINE STYLE YOK) ---
 function AuthModal({ mode, setMode, onClose, onSubmit }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -1203,8 +1179,7 @@ function AuthModal({ mode, setMode, onClose, onSubmit }) {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none focus:border-pink-500"
-            style={{ color: "white", backgroundColor: "#1f2937" }}
+            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none focus:border-pink-500 transition-colors placeholder:text-gray-400 dark:placeholder:text-gray-500"
             placeholder="Email"
             required
           />
@@ -1212,8 +1187,7 @@ function AuthModal({ mode, setMode, onClose, onSubmit }) {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none focus:border-pink-500"
-            style={{ color: "white", backgroundColor: "#1f2937" }}
+            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none focus:border-pink-500 transition-colors placeholder:text-gray-400 dark:placeholder:text-gray-500"
             placeholder="Password"
             required
           />
@@ -1296,8 +1270,7 @@ function OnboardingModal({ onComplete, initialData }) {
             <input
               value={data.name}
               onChange={(e) => setData({ ...data, name: e.target.value })}
-              className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none mt-1"
-              style={{ color: "white", backgroundColor: "#1f2937" }}
+              className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none mt-1 focus:border-pink-500 transition-colors placeholder:text-gray-400 dark:placeholder:text-gray-500"
               placeholder="e.g. Jessica Rabbit"
             />
           </div>
@@ -1308,8 +1281,7 @@ function OnboardingModal({ onComplete, initialData }) {
             <textarea
               value={data.bio}
               onChange={(e) => setData({ ...data, bio: e.target.value })}
-              className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none mt-1"
-              style={{ color: "white", backgroundColor: "#1f2937" }}
+              className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none mt-1 focus:border-pink-500 transition-colors placeholder:text-gray-400 dark:placeholder:text-gray-500"
               placeholder="Tell us about yourself..."
               rows="3"
               maxLength={500}
@@ -1328,8 +1300,7 @@ function OnboardingModal({ onComplete, initialData }) {
                 onChange={(e) =>
                   setData({ ...data, instagram: e.target.value })
                 }
-                className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-2 text-gray-900 dark:text-white text-sm outline-none mt-1"
-                style={{ color: "white", backgroundColor: "#1f2937" }}
+                className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-2 text-gray-900 dark:text-white text-sm outline-none mt-1 focus:border-pink-500 transition-colors placeholder:text-gray-400 dark:placeholder:text-gray-500"
                 placeholder="username"
               />
             </div>
@@ -1340,8 +1311,7 @@ function OnboardingModal({ onComplete, initialData }) {
               <input
                 value={data.twitter}
                 onChange={(e) => setData({ ...data, twitter: e.target.value })}
-                className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-2 text-gray-900 dark:text-white text-sm outline-none mt-1"
-                style={{ color: "white", backgroundColor: "#1f2937" }}
+                className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-2 text-gray-900 dark:text-white text-sm outline-none mt-1 focus:border-pink-500 transition-colors placeholder:text-gray-400 dark:placeholder:text-gray-500"
                 placeholder="username"
               />
             </div>
@@ -1353,8 +1323,7 @@ function OnboardingModal({ onComplete, initialData }) {
             <input
               value={data.onlyfans}
               onChange={(e) => setData({ ...data, onlyfans: e.target.value })}
-              className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-2 text-gray-900 dark:text-white text-sm outline-none mt-1"
-              style={{ color: "white", backgroundColor: "#1f2937" }}
+              className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-2 text-gray-900 dark:text-white text-sm outline-none mt-1 focus:border-pink-500 transition-colors placeholder:text-gray-400 dark:placeholder:text-gray-500"
               placeholder="https://..."
             />
           </div>
@@ -1394,8 +1363,7 @@ function PostModal({ onClose, onSubmit }) {
           <select
             value={formData.type}
             onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-            className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none"
-            style={{ color: "white", backgroundColor: "#1f2937" }}
+            className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none focus:border-pink-500"
           >
             {CATEGORIES.map((c) => (
               <option key={c.id} value={c.id}>
@@ -1409,16 +1377,14 @@ function PostModal({ onClose, onSubmit }) {
               setFormData({ ...formData, location: e.target.value })
             }
             placeholder="Location"
-            className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none"
-            style={{ color: "white", backgroundColor: "#1f2937" }}
+            className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none focus:border-pink-500"
           />
           <textarea
             rows="3"
             value={formData.desc}
             onChange={(e) => setFormData({ ...formData, desc: e.target.value })}
             placeholder="Details..."
-            className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none"
-            style={{ color: "white", backgroundColor: "#1f2937" }}
+            className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none focus:border-pink-500"
           ></textarea>
           <div className="flex gap-2 text-sm font-bold">
             <div
