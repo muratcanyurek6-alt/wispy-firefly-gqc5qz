@@ -56,7 +56,7 @@ import {
   MoreVertical,
 } from "lucide-react";
 
-// --- TASARIM KURTARICI (CDN - CSS DÜZELTMELERİ EKLENDİ) ---
+// --- TASARIM KURTARICI ---
 const TailwindCDN = () => (
   <>
     <link
@@ -134,7 +134,7 @@ const generateFakeData = async () => {
   alert("⚠️ Fake Data özelliği kodda mevcut ama buton gizli.");
 };
 
-// --- NAV ITEM COMPONENT (CLAUDE FIX: mobileOnly ve Desktop Etiket Gizleme) ---
+// --- NAV ITEM COMPONENT ---
 const NavItem = ({
   tab,
   icon: Icon,
@@ -175,7 +175,6 @@ const NavItem = ({
       className={`h-6 w-6 ${activeTab === tab ? "fill-current" : ""}`}
       strokeWidth={activeTab === tab ? 2.5 : 2}
     />
-    {/* Masaüstünde etiketi gizle, sadece mobilde göster */}
     <span
       className={`text-[10px] mt-0.5 font-medium ${
         mobileOnly ? "" : "md:hidden"
@@ -261,7 +260,7 @@ const Spotlight = ({ posts, onProfileClick }) => {
   );
 };
 
-// --- CHAT LİSTESİ BİLEŞENİ (CLAUDE FIX: Placeholder Image) ---
+// --- CHAT LİSTESİ BİLEŞENİ ---
 const ChatList = ({ user, activeChat, setActiveChat }) => {
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -281,14 +280,14 @@ const ChatList = ({ user, activeChat, setActiveChat }) => {
         const otherUserId = data.participants.find((id) => id !== user.id);
         const otherUser = data.users?.[otherUserId] || {
           name: "Unknown",
-          image: "https://via.placeholder.com/150", // Placeholder Eklendi
+          image: "https://via.placeholder.com/150",
         };
 
         return {
           id: doc.id,
           ownerId: otherUserId,
           name: otherUser.name,
-          image: otherUser.image || "https://via.placeholder.com/150", // Güvenlik
+          image: otherUser.image || "https://via.placeholder.com/150",
           lastMessage: data.lastMessage,
           time: data.lastUpdated,
         };
@@ -359,7 +358,7 @@ const ChatList = ({ user, activeChat, setActiveChat }) => {
   );
 };
 
-// --- CHAT PENCERESİ BİLEŞENİ (CLAUDE FIX: createdAt Hatası) ---
+// --- CHAT PENCERESİ BİLEŞENİ ---
 const ChatWindow = ({ activeChat, setActiveChat, user }) => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
@@ -390,14 +389,13 @@ const ChatWindow = ({ activeChat, setActiveChat, user }) => {
     const messageText = newMessage;
     setNewMessage("");
 
-    // 1. Mesajı Kaydet
     await addDoc(collection(db, "chats", chatId, "messages"), {
       text: messageText,
       senderId: user.id,
       createdAt: serverTimestamp(),
     });
 
-    // 2. Ana Chat Dokümanını Güncelle (Sadece lastUpdated ve lastMessage)
+    // Claude Fix: Sadece lastUpdated güncelle, createdAt'e dokunma
     const chatRef = doc(db, "chats", chatId);
     await setDoc(
       chatRef,
@@ -412,7 +410,6 @@ const ChatWindow = ({ activeChat, setActiveChat, user }) => {
         },
         lastMessage: messageText,
         lastUpdated: serverTimestamp(),
-        // createdAt BURADAN KALDIRILDI (Her mesajda ezilmemesi için)
       },
       { merge: true }
     );
@@ -423,7 +420,6 @@ const ChatWindow = ({ activeChat, setActiveChat, user }) => {
       {/* Header */}
       <div className="p-3 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center bg-white dark:bg-gray-900 z-10 shadow-sm sticky top-0 safe-area-top">
         <div className="flex items-center gap-3">
-          {/* Mobil için Geri Butonu */}
           <button
             onClick={() => setActiveChat(null)}
             className="md:hidden text-gray-500 hover:text-gray-900 dark:hover:text-white p-1"
@@ -749,6 +745,7 @@ export default function App() {
     }
   };
 
+  // CLAUDE FIX: State güncellemeleri düzeltildi
   const handleCompleteOnboarding = async (profileData) => {
     if (auth.currentUser) {
       await updateProfile(auth.currentUser, {
@@ -758,8 +755,8 @@ export default function App() {
       await setDoc(
         doc(db, "users", auth.currentUser.uid),
         {
-          displayName: profileData.name,
-          photoURL: profileData.image,
+          name: profileData.name, // Standart isim
+          image: profileData.image, // Standart resim
           bio: profileData.bio,
           socials: {
             instagram: profileData.instagram,
@@ -771,7 +768,8 @@ export default function App() {
         },
         { merge: true }
       );
-      window.location.reload();
+      // State'i anında güncelle (Sayfa yenilemeye gerek yok)
+      setUser((prev) => ({ ...prev, ...profileData }));
     }
     setShowOnboarding(false);
   };
@@ -787,7 +785,7 @@ export default function App() {
     if (!user) return;
     try {
       const postData = {
-        ownerId: user.id, // DÜZELTME: user.id
+        ownerId: user.id,
         name: user.name,
         handle:
           "@" +
@@ -800,7 +798,7 @@ export default function App() {
         location: formData.location,
         desc: formData.desc,
         tags: ["New", formData.type],
-        createdAt: Date.now(),
+        createdAt: serverTimestamp(), // CLAUDE FIX: serverTimestamp
         followers: "New",
         socials: user.socials || {},
       };
@@ -1062,7 +1060,7 @@ export default function App() {
                     <button className="bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-white py-1.5 rounded-lg text-xs font-bold transition-colors">
                       View Profile
                     </button>
-                    {/* BUTTON FIX: Tıklayınca Chat'e Atar ve Veritabanına Yazar */}
+                    {/* BUTTON FIX: Tıklayınca Chat'e Atar ve Veritabanına Güvenli Yazar */}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -1078,9 +1076,13 @@ export default function App() {
                           };
 
                           const chatRef = doc(db, "chats", chatData.id);
-                          await setDoc(
-                            chatRef,
-                            {
+
+                          // CLAUDE FIX: Önce var mı diye bak
+                          const chatSnap = await getDoc(chatRef);
+
+                          if (!chatSnap.exists()) {
+                            // Yoksa oluştur (createdAt ile)
+                            await setDoc(chatRef, {
                               participants: [user.id, ownerId],
                               users: {
                                 [user.id]: {
@@ -1093,13 +1095,32 @@ export default function App() {
                                 },
                               },
                               lastUpdated: serverTimestamp(),
-                              // createdAt burada yok, gerekirse ilk kayıtta eklenir
-                            },
-                            { merge: true }
-                          );
+                              createdAt: serverTimestamp(),
+                            });
+                          } else {
+                            // Varsa sadece güncelle (createdAt'e dokunma)
+                            await setDoc(
+                              chatRef,
+                              {
+                                participants: [user.id, ownerId],
+                                users: {
+                                  [user.id]: {
+                                    name: user.name,
+                                    image: user.image,
+                                  },
+                                  [ownerId]: {
+                                    name: post.name,
+                                    image: post.image,
+                                  },
+                                },
+                                lastUpdated: serverTimestamp(),
+                              },
+                              { merge: true }
+                            );
+                          }
 
                           setActiveChat(chatData);
-                          setActiveTab("chat"); // ZORUNLU YÖNLENDİRME
+                          setActiveTab("chat");
                         });
                       }}
                       className="bg-pink-600 hover:bg-pink-700 text-white py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-2 shadow-lg shadow-pink-600/20"
@@ -1290,7 +1311,7 @@ export default function App() {
                   </a>
                 )}
               </div>
-              {/* CLAUDE FIX: Async & Await */}
+              {/* CLAUDE FIX: Güvenli Chat Oluşturma */}
               <button
                 onClick={() => {
                   setSelectedProfile(null);
@@ -1306,9 +1327,11 @@ export default function App() {
                     };
 
                     const chatRef = doc(db, "chats", chatData.id);
-                    await setDoc(
-                      chatRef,
-                      {
+                    // Önce var mı diye bak
+                    const chatSnap = await getDoc(chatRef);
+
+                    if (!chatSnap.exists()) {
+                      await setDoc(chatRef, {
                         participants: [user.id, ownerId],
                         users: {
                           [user.id]: { name: user.name, image: user.image },
@@ -1318,9 +1341,25 @@ export default function App() {
                           },
                         },
                         lastUpdated: serverTimestamp(),
-                      },
-                      { merge: true }
-                    );
+                        createdAt: serverTimestamp(),
+                      });
+                    } else {
+                      await setDoc(
+                        chatRef,
+                        {
+                          participants: [user.id, ownerId],
+                          users: {
+                            [user.id]: { name: user.name, image: user.image },
+                            [ownerId]: {
+                              name: selectedProfile.name,
+                              image: selectedProfile.image,
+                            },
+                          },
+                          lastUpdated: serverTimestamp(),
+                        },
+                        { merge: true }
+                      );
+                    }
 
                     setActiveChat(chatData);
                     setActiveTab("chat");
@@ -1375,7 +1414,6 @@ function PostModal({ onClose, onSubmit }) {
   });
   return (
     <div className="fixed inset-0 bg-black/50 dark:bg-black/80 z-[80] flex items-center justify-center p-4 backdrop-blur-sm">
-      {/* relative eklendi */}
       <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl w-full max-w-md p-6 shadow-2xl relative">
         <button
           onClick={onClose}
