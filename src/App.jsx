@@ -245,7 +245,7 @@ const Spotlight = ({ posts, onProfileClick }) => {
   );
 };
 
-// --- MESSAGES VIEW (Claude AI Fix: Index & Sıralama) ---
+// --- MESSAGES VIEW ---
 const MessagesView = ({ user, setActiveChat }) => {
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -253,19 +253,18 @@ const MessagesView = ({ user, setActiveChat }) => {
   useEffect(() => {
     if (!user) return;
 
-    // CLAUDE FIX: Composite Index gerektiren sorgu.
-    // Konsolda kırmızı hata görürsen linke tıkla ve index oluştur.
+    // DÜZELTME: user.uid YERİNE user.id KULLANILDI
     const q = query(
       collection(db, "chats"),
-      where("participants", "array-contains", user.uid),
+      where("participants", "array-contains", user.id),
       orderBy("lastUpdated", "desc")
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const chatList = snapshot.docs.map((doc) => {
         const data = doc.data();
-        const otherUserId = data.participants.find((id) => id !== user.uid);
-        // Güvenlik kontrolü
+        // DÜZELTME: user.id KULLANILDI
+        const otherUserId = data.participants.find((id) => id !== user.id);
         const otherUser = data.users?.[otherUserId] || {
           name: "Unknown",
           image: "",
@@ -336,15 +335,15 @@ const MessagesView = ({ user, setActiveChat }) => {
   );
 };
 
-// --- CHAT MODAL (Claude AI Fix: Null Check & Auto Create) ---
+// --- CHAT MODAL ---
 const ChatModal = ({ activeChat, setActiveChat, user }) => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
 
-  // CLAUDE FIX 1: Null Check (Güvenlik)
   if (!activeChat || !activeChat.ownerId) return null;
 
-  const chatId = [user.uid, activeChat.ownerId].sort().join("_");
+  // DÜZELTME: user.id KULLANILDI
+  const chatId = [user.id, activeChat.ownerId].sort().join("_");
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -371,21 +370,21 @@ const ChatModal = ({ activeChat, setActiveChat, user }) => {
     const messageText = newMessage;
     setNewMessage("");
 
-    // 1. Mesajı Ekle
+    // 1. Mesajı Ekle - DÜZELTME: user.id
     await addDoc(collection(db, "chats", chatId, "messages"), {
       text: messageText,
-      senderId: user.uid,
+      senderId: user.id,
       createdAt: serverTimestamp(),
     });
 
-    // 2. Sohbeti Güncelle/Oluştur
+    // 2. Sohbeti Güncelle - DÜZELTME: user.id
     const chatRef = doc(db, "chats", chatId);
     await setDoc(
       chatRef,
       {
-        participants: [user.uid, activeChat.ownerId],
+        participants: [user.id, activeChat.ownerId],
         users: {
-          [user.uid]: { name: user.name, image: user.image },
+          [user.id]: { name: user.name, image: user.image },
           [activeChat.ownerId]: {
             name: activeChat.name,
             image: activeChat.image,
@@ -393,7 +392,6 @@ const ChatModal = ({ activeChat, setActiveChat, user }) => {
         },
         lastMessage: messageText,
         lastUpdated: serverTimestamp(),
-        // Eğer ilk kez oluşuyorsa createdAt'i de ekler
         createdAt: serverTimestamp(),
       },
       { merge: true }
@@ -427,7 +425,8 @@ const ChatModal = ({ activeChat, setActiveChat, user }) => {
           <div
             key={msg.id}
             className={`p-3 rounded-2xl text-sm max-w-[80%] ${
-              msg.senderId === user.uid
+              // DÜZELTME: user.id
+              msg.senderId === user.id
                 ? "self-end bg-pink-600 text-white rounded-br-none"
                 : "self-start bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-200 border border-gray-200 dark:border-gray-700 rounded-bl-none shadow-sm"
             }`}
@@ -463,7 +462,8 @@ const ChatModal = ({ activeChat, setActiveChat, user }) => {
 
 // --- PROFILE VIEW ---
 const ProfileView = ({ user, setShowOnboarding, handleLogout, posts }) => {
-  const myPosts = posts.filter((p) => p.ownerId === user.uid);
+  // DÜZELTME: user.id
+  const myPosts = posts.filter((p) => p.ownerId === user.id);
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 pb-24">
@@ -712,7 +712,7 @@ export default function App() {
     if (!user) return;
     try {
       const postData = {
-        ownerId: user.id,
+        ownerId: user.id, // DÜZELTME: user.id
         name: user.name,
         handle:
           "@" +
@@ -984,7 +984,7 @@ export default function App() {
                     <button className="bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-white py-1.5 rounded-lg text-xs font-bold transition-colors">
                       View Profile
                     </button>
-                    {/* CLAUDE FIX: Butona basınca chat oluştur */}
+                    {/* DÜZELTME: user.id */}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -992,22 +992,20 @@ export default function App() {
                           const ownerId = post.ownerId;
                           if (!ownerId) return;
 
-                          // Chat'i aç ve veritabanında oluştur
                           const chatData = {
-                            id: [user.uid, ownerId].sort().join("_"),
+                            id: [user.id, ownerId].sort().join("_"),
                             ownerId: ownerId,
                             name: post.name,
                             image: post.image,
                           };
 
-                          // Arka planda chat dokümanını oluştur
                           const chatRef = doc(db, "chats", chatData.id);
                           await setDoc(
                             chatRef,
                             {
-                              participants: [user.uid, ownerId],
+                              participants: [user.id, ownerId],
                               users: {
-                                [user.uid]: {
+                                [user.id]: {
                                   name: user.name,
                                   image: user.image,
                                 },
@@ -1206,12 +1204,12 @@ export default function App() {
               <button
                 onClick={() => {
                   setSelectedProfile(null);
-                  // CLAUDE FIX: Butona basınca chat oluştur
+                  // DÜZELTME: user.id
                   const ownerId = selectedProfile.ownerId;
                   if (!ownerId) return;
 
                   const chatData = {
-                    id: [user.uid, ownerId].sort().join("_"),
+                    id: [user.id, ownerId].sort().join("_"),
                     ownerId: ownerId,
                     name: selectedProfile.name,
                     image: selectedProfile.image,
@@ -1220,9 +1218,9 @@ export default function App() {
                   setDoc(
                     doc(db, "chats", chatData.id),
                     {
-                      participants: [user.uid, ownerId],
+                      participants: [user.id, ownerId],
                       users: {
-                        [user.uid]: { name: user.name, image: user.image },
+                        [user.id]: { name: user.name, image: user.image },
                         [ownerId]: {
                           name: selectedProfile.name,
                           image: selectedProfile.image,
