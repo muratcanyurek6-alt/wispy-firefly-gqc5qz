@@ -268,6 +268,8 @@ const ChatList = ({ user, activeChat, setActiveChat }) => {
   useEffect(() => {
     if (!user) return;
 
+    // CLAUDE FIX: Index Oluşturma Uyarısı
+    // Bu sorgu için Firebase Console'dan "participants" ve "lastUpdated" için composite index oluşturmalısın.
     const q = query(
       collection(db, "chats"),
       where("participants", "array-contains", user.id),
@@ -395,7 +397,6 @@ const ChatWindow = ({ activeChat, setActiveChat, user }) => {
       createdAt: serverTimestamp(),
     });
 
-    // Claude Fix: Sadece lastUpdated güncelle, createdAt'e dokunma
     const chatRef = doc(db, "chats", chatId);
     await setDoc(
       chatRef,
@@ -420,6 +421,7 @@ const ChatWindow = ({ activeChat, setActiveChat, user }) => {
       {/* Header */}
       <div className="p-3 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center bg-white dark:bg-gray-900 z-10 shadow-sm sticky top-0 safe-area-top">
         <div className="flex items-center gap-3">
+          {/* Mobil için Geri Butonu */}
           <button
             onClick={() => setActiveChat(null)}
             className="md:hidden text-gray-500 hover:text-gray-900 dark:hover:text-white p-1"
@@ -729,6 +731,7 @@ export default function App() {
     fetchPosts();
   }, []);
 
+  // CLAUDE FIX: Signup'ta gecikme sorunu çözümü (setTimeout)
   const handleAuthSubmit = async (e, email, password) => {
     e.preventDefault();
     try {
@@ -738,14 +741,17 @@ export default function App() {
       } else {
         await createUserWithEmailAndPassword(auth, email, password);
         setShowAuthModal(false);
-        setShowOnboarding(true);
+
+        // State'in güncellenmesi için küçük bir gecikme (Life-saver)
+        setTimeout(() => {
+          setShowOnboarding(true);
+        }, 500);
       }
     } catch (error) {
       alert("Hata: " + error.message);
     }
   };
 
-  // CLAUDE FIX: State güncellemeleri düzeltildi
   const handleCompleteOnboarding = async (profileData) => {
     if (auth.currentUser) {
       await updateProfile(auth.currentUser, {
@@ -755,8 +761,8 @@ export default function App() {
       await setDoc(
         doc(db, "users", auth.currentUser.uid),
         {
-          name: profileData.name, // Standart isim
-          image: profileData.image, // Standart resim
+          name: profileData.name,
+          image: profileData.image,
           bio: profileData.bio,
           socials: {
             instagram: profileData.instagram,
@@ -768,7 +774,6 @@ export default function App() {
         },
         { merge: true }
       );
-      // State'i anında güncelle (Sayfa yenilemeye gerek yok)
       setUser((prev) => ({ ...prev, ...profileData }));
     }
     setShowOnboarding(false);
@@ -798,7 +803,7 @@ export default function App() {
         location: formData.location,
         desc: formData.desc,
         tags: ["New", formData.type],
-        createdAt: serverTimestamp(), // CLAUDE FIX: serverTimestamp
+        createdAt: serverTimestamp(),
         followers: "New",
         socials: user.socials || {},
       };
@@ -1414,6 +1419,7 @@ function PostModal({ onClose, onSubmit }) {
   });
   return (
     <div className="fixed inset-0 bg-black/50 dark:bg-black/80 z-[80] flex items-center justify-center p-4 backdrop-blur-sm">
+      {/* CLAUDE FIX: relative eklendi */}
       <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl w-full max-w-md p-6 shadow-2xl relative">
         <button
           onClick={onClose}
