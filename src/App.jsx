@@ -28,31 +28,21 @@ import {
 import {
   MapPin,
   Users,
-  Camera,
   PlusSquare,
   Search,
   CheckCircle,
   Star,
   Zap,
   X,
-  Building2,
   Edit2,
   Trash2,
   Loader2,
-  Mail,
-  Lock,
-  ArrowRight,
   MessageCircle,
-  ShieldCheck,
-  Upload,
-  Sparkles,
   Link as LinkIcon,
   Instagram,
   Twitter,
   Crown,
   Send,
-  AlertCircle,
-  TrendingUp,
   Flame,
   Database,
   LogOut,
@@ -61,32 +51,15 @@ import {
   Home,
   Wand2,
   User,
-  Settings,
+  TrendingUp,
 } from "lucide-react";
 
-// --- TASARIM KURTARICI (MODERN TAILWIND v3) ---
+// --- TASARIM KURTARICI (CDN) ---
 const TailwindCDN = () => (
   <>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script
-      dangerouslySetInnerHTML={{
-        __html: `
-        tailwind.config = {
-          darkMode: 'class',
-          theme: {
-            extend: {
-              colors: {
-                gray: {
-                  900: '#111827',
-                  800: '#1f2937',
-                  700: '#374151',
-                }
-              }
-            }
-          }
-        }
-      `,
-      }}
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
     />
     <style>{`
       .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -113,6 +86,8 @@ const firebaseConfig = {
   measurementId: "G-QNG54EJ9R5",
 };
 
+const apiKey = ""; // Gemini API Key
+
 /* --- SİSTEM BAŞLATILIYOR --- */
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -128,28 +103,6 @@ const CATEGORIES = [
   { id: "SERVICE", label: "Services 📸", color: "orange" },
 ];
 
-/* --- HATA MESAJI ÇEVİRİCİ --- */
-const getFriendlyErrorMessage = (errorCode) => {
-  switch (errorCode) {
-    case "auth/email-already-in-use":
-      return "Bu e-posta adresi zaten kullanımda.";
-    case "auth/invalid-email":
-      return "Geçersiz e-posta adresi.";
-    case "auth/user-not-found":
-      return "Böyle bir kullanıcı bulunamadı.";
-    case "auth/wrong-password":
-      return "Şifre hatalı.";
-    case "auth/weak-password":
-      return "Şifre çok zayıf (en az 6 karakter).";
-    case "auth/too-many-requests":
-      return "Çok fazla deneme yaptınız. Biraz bekleyin.";
-    case "auth/network-request-failed":
-      return "Ağ hatası. İnternet bağlantınızı kontrol edin.";
-    default:
-      return "Bir hata oluştu: " + errorCode;
-  }
-};
-
 /* --- RESİM YÜKLEME FONKSİYONU --- */
 const uploadImageToCloudinary = async (file) => {
   if (!file) return null;
@@ -162,24 +115,19 @@ const uploadImageToCloudinary = async (file) => {
       `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloudName}/image/upload`,
       { method: "POST", body: formData }
     );
-
-    if (!res.ok) {
-      const err = await res.text();
-      console.error("Cloudinary Hatası:", err);
-      throw new Error("Yükleme başarısız");
-    }
-
     const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
     return data.secure_url;
   } catch (error) {
     console.error("Resim yükleme hatası:", error);
+    alert("Resim yüklenemedi. Ayarları kontrol et.");
     return null;
   }
 };
 
 /* --- SAHTE VERİ OLUŞTURUCU --- */
 const generateFakeData = async () => {
-  alert("⚠️ Fake Data: Kodda mevcut.");
+  alert("⚠️ Fake Data özelliği kodda mevcut ama buton gizli.");
 };
 
 // --- NAV ITEM COMPONENT ---
@@ -192,63 +140,45 @@ const NavItem = ({
   requireAuth,
   setEditingPost,
   setShowPostModal,
-  setShowOnboarding,
-  mobileOnly,
-}) => {
-  const handleClick = () => {
-    if (tab === "post") {
-      requireAuth(() => {
-        setEditingPost(null);
-        setShowPostModal(true);
-      });
-    } else if (tab === "profile") {
-      requireAuth(() => {
-        setActiveTab("profile");
+}) => (
+  <button
+    onClick={() => {
+      if (tab === "post") {
+        requireAuth(() => {
+          setEditingPost(null);
+          setShowPostModal(true);
+        });
+      } else if (tab === "profile" || tab === "chat") {
+        requireAuth(() => {
+          setActiveTab(tab);
+          window.scrollTo(0, 0);
+        });
+      } else {
+        setActiveTab(tab);
         window.scrollTo(0, 0);
-      });
-    } else if (tab === "chat") {
-      requireAuth(() => {
-        setActiveTab("chat");
-        window.scrollTo(0, 0);
-      });
-    } else {
-      setActiveTab(tab);
-      window.scrollTo(0, 0);
-    }
-  };
-
-  return (
-    <button
-      onClick={handleClick}
-      className={`flex flex-col items-center justify-center px-3 py-1 transition-colors ${
-        mobileOnly ? "md:hidden w-full" : ""
-      } ${
-        activeTab === tab
-          ? "text-pink-500"
-          : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-      }`}
-    >
-      <Icon
-        className={`h-6 w-6 ${activeTab === tab ? "fill-current" : ""}`}
-        strokeWidth={activeTab === tab ? 2.5 : 2}
-      />
-      {mobileOnly && (
-        <span className="text-[10px] mt-0.5 font-medium">{label}</span>
-      )}
-    </button>
-  );
-};
+      }
+    }}
+    className={`flex flex-col items-center justify-center w-full py-1 ${
+      activeTab === tab ? "text-pink-500" : "text-gray-500 dark:text-gray-400"
+    }`}
+  >
+    <Icon
+      className={`h-6 w-6 ${activeTab === tab ? "fill-current" : ""}`}
+      strokeWidth={activeTab === tab ? 2.5 : 2}
+    />
+    <span className="text-[10px] mt-0.5 font-medium">{label}</span>
+  </button>
+);
 
 // --- SPOTLIGHT BİLEŞENİ ---
 const Spotlight = ({ posts, onProfileClick }) => {
   const scrollRef = React.useRef(null);
   const [isPaused, setIsPaused] = useState(false);
-  const loopPosts = [...posts, ...posts, ...posts];
+  const loopPosts = posts.length > 0 ? [...posts, ...posts, ...posts] : [];
 
   useEffect(() => {
     const scrollContainer = scrollRef.current;
     if (!scrollContainer) return;
-    let scrollAmount = 0;
     const scrollStep = 1;
 
     const scrollInterval = setInterval(() => {
@@ -315,7 +245,7 @@ const Spotlight = ({ posts, onProfileClick }) => {
   );
 };
 
-// --- CHAT LIST BİLEŞENİ (DÜZELTİLDİ - NULL CHECK EKLENDİ) ---
+// --- MESSAGES VIEW (Claude AI Fix: Index & Sıralama) ---
 const MessagesView = ({ user, setActiveChat }) => {
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -323,19 +253,22 @@ const MessagesView = ({ user, setActiveChat }) => {
   useEffect(() => {
     if (!user) return;
 
+    // CLAUDE FIX: Composite Index gerektiren sorgu.
+    // Konsolda kırmızı hata görürsen linke tıkla ve index oluştur.
     const q = query(
       collection(db, "chats"),
-      where("participants", "array-contains", user.uid)
+      where("participants", "array-contains", user.uid),
+      orderBy("lastUpdated", "desc")
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const chatList = snapshot.docs.map((doc) => {
         const data = doc.data();
         const otherUserId = data.participants.find((id) => id !== user.uid);
-        // GÜVENLİK: veritabanında users objesi eksikse patlamasın diye ?. (optional chaining) kullanıyoruz
+        // Güvenlik kontrolü
         const otherUser = data.users?.[otherUserId] || {
           name: "Unknown",
-          image: "https://via.placeholder.com/150",
+          image: "",
         };
 
         return {
@@ -347,9 +280,6 @@ const MessagesView = ({ user, setActiveChat }) => {
           time: data.lastUpdated,
         };
       });
-
-      chatList.sort((a, b) => (b.time?.seconds || 0) - (a.time?.seconds || 0));
-
       setChats(chatList);
       setLoading(false);
     });
@@ -369,9 +299,6 @@ const MessagesView = ({ user, setActiveChat }) => {
         <div className="text-center py-20 border border-dashed border-gray-300 dark:border-gray-800 rounded-2xl">
           <MessageCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <p className="text-gray-500 dark:text-gray-400">No messages yet.</p>
-          <p className="text-xs text-gray-400 mt-2">
-            Start chatting from a post!
-          </p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -379,7 +306,7 @@ const MessagesView = ({ user, setActiveChat }) => {
             <div
               key={chat.id}
               onClick={() => setActiveChat(chat)}
-              className="flex items-center gap-4 p-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors shadow-sm"
+              className="flex items-center gap-4 p-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
             >
               <img
                 src={chat.image}
@@ -391,14 +318,10 @@ const MessagesView = ({ user, setActiveChat }) => {
                     {chat.name}
                   </h3>
                   <span className="text-[10px] text-gray-400">
-                    {chat.time?.toDate
-                      ? chat.time
-                          .toDate()
-                          .toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })
-                      : ""}
+                    {chat.time?.toDate().toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
                   </span>
                 </div>
                 <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
@@ -413,10 +336,14 @@ const MessagesView = ({ user, setActiveChat }) => {
   );
 };
 
-// --- CHAT MODAL ---
+// --- CHAT MODAL (Claude AI Fix: Null Check & Auto Create) ---
 const ChatModal = ({ activeChat, setActiveChat, user }) => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
+
+  // CLAUDE FIX 1: Null Check (Güvenlik)
+  if (!activeChat || !activeChat.ownerId) return null;
+
   const chatId = [user.uid, activeChat.ownerId].sort().join("_");
   const messagesEndRef = useRef(null);
 
@@ -444,12 +371,14 @@ const ChatModal = ({ activeChat, setActiveChat, user }) => {
     const messageText = newMessage;
     setNewMessage("");
 
+    // 1. Mesajı Ekle
     await addDoc(collection(db, "chats", chatId, "messages"), {
       text: messageText,
       senderId: user.uid,
       createdAt: serverTimestamp(),
     });
 
+    // 2. Sohbeti Güncelle/Oluştur
     const chatRef = doc(db, "chats", chatId);
     await setDoc(
       chatRef,
@@ -464,14 +393,17 @@ const ChatModal = ({ activeChat, setActiveChat, user }) => {
         },
         lastMessage: messageText,
         lastUpdated: serverTimestamp(),
+        // Eğer ilk kez oluşuyorsa createdAt'i de ekler
+        createdAt: serverTimestamp(),
       },
       { merge: true }
     );
   };
 
   return (
-    <div className="fixed bottom-0 right-0 md:right-4 w-full md:w-96 h-[100dvh] md:h-[500px] bg-white dark:bg-gray-900 border-t md:border border-gray-200 dark:border-gray-800 md:rounded-t-2xl z-[100] flex flex-col shadow-2xl">
-      <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex justify-between bg-white dark:bg-gray-900 md:rounded-t-2xl items-center">
+    <div className="fixed bottom-0 right-0 md:right-4 w-full md:w-80 h-[100dvh] md:h-[500px] bg-white dark:bg-gray-900 border-t md:border border-gray-200 dark:border-gray-800 md:rounded-t-2xl z-[100] flex flex-col shadow-2xl">
+      {/* Header */}
+      <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex justify-between bg-white dark:bg-gray-900 md:rounded-t-2xl items-center safe-area-top">
         <div className="flex items-center gap-3">
           <img
             src={activeChat.image}
@@ -489,6 +421,7 @@ const ChatModal = ({ activeChat, setActiveChat, user }) => {
         </button>
       </div>
 
+      {/* Mesajlar */}
       <div className="flex-1 bg-gray-50 dark:bg-gray-950 p-4 overflow-y-auto flex flex-col gap-3">
         {messages.map((msg) => (
           <div
@@ -505,6 +438,7 @@ const ChatModal = ({ activeChat, setActiveChat, user }) => {
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Input */}
       <form
         onSubmit={handleSendMessage}
         className="p-3 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex gap-2 safe-area-bottom"
@@ -512,7 +446,7 @@ const ChatModal = ({ activeChat, setActiveChat, user }) => {
         <input
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
-          className="w-full bg-gray-100 dark:bg-gray-950 rounded-full px-4 py-3 text-gray-900 dark:text-white outline-none border border-gray-200 dark:border-gray-800 placeholder:text-gray-400 dark:placeholder:text-gray-600"
+          className="w-full bg-gray-100 dark:bg-gray-950 rounded-full px-4 py-3 text-gray-900 dark:text-white outline-none border border-gray-200 dark:border-gray-800 placeholder:text-gray-400 dark:placeholder:text-gray-600 focus:border-pink-500 transition-colors"
           placeholder="Type a message..."
           autoFocus
         />
@@ -527,13 +461,13 @@ const ChatModal = ({ activeChat, setActiveChat, user }) => {
   );
 };
 
-// --- PROFİL SAYFASI ---
+// --- PROFILE VIEW ---
 const ProfileView = ({ user, setShowOnboarding, handleLogout, posts }) => {
   const myPosts = posts.filter((p) => p.ownerId === user.uid);
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 pb-24">
-      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-lg text-center mb-8 relative">
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-lg text-center mb-8">
         <div className="relative inline-block">
           <img
             src={user.image}
@@ -618,16 +552,13 @@ const ProfileView = ({ user, setShowOnboarding, handleLogout, posts }) => {
   );
 };
 
-// --- AI STUDIO BİLEŞENİ ---
-const AIStudio = ({ user, requireAuth }) => {
-  return (
-    <div className="p-4 text-center text-gray-500 flex items-center justify-center h-[50vh]">
-      AI Studio Coming Soon...
-    </div>
-  );
-};
+const AIStudio = () => (
+  <div className="p-4 text-center text-gray-500 flex items-center justify-center h-[50vh]">
+    AI Studio Coming Soon...
+  </div>
+);
 
-// --- ANA UYGULAMA ---
+// --- MAIN APP ---
 export default function App() {
   const [activeTab, setActiveTab] = useState("feed");
   const [posts, setPosts] = useState([]);
@@ -643,7 +574,6 @@ export default function App() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showPostModal, setShowPostModal] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
-  const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState(null);
   const [activeChat, setActiveChat] = useState(null);
   const [editingPost, setEditingPost] = useState(null);
@@ -728,17 +658,19 @@ export default function App() {
     fetchPosts();
   }, []);
 
-  const handleAuthSubmit = async (email, password, mode) => {
+  const handleAuthSubmit = async (e, email, password) => {
+    e.preventDefault();
     try {
-      if (mode === "login") {
+      if (authMode === "login") {
         await signInWithEmailAndPassword(auth, email, password);
+        setShowAuthModal(false);
       } else {
         await createUserWithEmailAndPassword(auth, email, password);
+        setShowAuthModal(false);
+        setShowOnboarding(true);
       }
-      setShowAuthModal(false);
-      if (mode === "signup") setShowOnboarding(true);
     } catch (error) {
-      throw error;
+      alert("Hata: " + error.message);
     }
   };
 
@@ -773,7 +705,6 @@ export default function App() {
     if (window.confirm("Çıkış yapmak istiyor musun?")) {
       await signOut(auth);
       setActiveChat(null);
-      setActiveTab("feed");
     }
   };
 
@@ -852,7 +783,7 @@ export default function App() {
     >
       <TailwindCDN />
 
-      {/* ÜST NAVBAR */}
+      {/* NAVBAR */}
       <nav className="sticky top-0 z-40 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800 transition-colors duration-300">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           <div
@@ -870,7 +801,7 @@ export default function App() {
             </h1>
           </div>
 
-          {/* DESKTOP MENÜ (YENİ - Sağ Üstte) */}
+          {/* DESKTOP MENÜ */}
           <div className="hidden md:flex items-center gap-6">
             <NavItem
               tab="feed"
@@ -946,9 +877,7 @@ export default function App() {
         </div>
       </nav>
 
-      {/* İÇERİK YÖNETİMİ */}
-
-      {/* 1. FEED SAYFASI */}
+      {/* İÇERİK */}
       {activeTab === "feed" && (
         <>
           <div className="relative bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 transition-colors duration-300 pt-4 pb-4">
@@ -1055,12 +984,45 @@ export default function App() {
                     <button className="bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-white py-1.5 rounded-lg text-xs font-bold transition-colors">
                       View Profile
                     </button>
+                    {/* CLAUDE FIX: Butona basınca chat oluştur */}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        requireAuth(() =>
-                          setActiveChat({ ...post, ownerId: post.ownerId })
-                        );
+                        requireAuth(async () => {
+                          const ownerId = post.ownerId;
+                          if (!ownerId) return;
+
+                          // Chat'i aç ve veritabanında oluştur
+                          const chatData = {
+                            id: [user.uid, ownerId].sort().join("_"),
+                            ownerId: ownerId,
+                            name: post.name,
+                            image: post.image,
+                          };
+
+                          // Arka planda chat dokümanını oluştur
+                          const chatRef = doc(db, "chats", chatData.id);
+                          await setDoc(
+                            chatRef,
+                            {
+                              participants: [user.uid, ownerId],
+                              users: {
+                                [user.uid]: {
+                                  name: user.name,
+                                  image: user.image,
+                                },
+                                [ownerId]: {
+                                  name: post.name,
+                                  image: post.image,
+                                },
+                              },
+                              lastUpdated: serverTimestamp(),
+                            },
+                            { merge: true }
+                          );
+
+                          setActiveChat(chatData);
+                        });
                       }}
                       className="bg-pink-600 hover:bg-pink-700 text-white py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-2 shadow-lg shadow-pink-600/20"
                     >
@@ -1093,15 +1055,10 @@ export default function App() {
         </>
       )}
 
-      {/* 2. AI STUDIO */}
       {activeTab === "ai-studio" && <AIStudio />}
-
-      {/* 3. CHAT SAYFASI */}
       {activeTab === "chat" && (
         <MessagesView user={user} setActiveChat={setActiveChat} />
       )}
-
-      {/* 4. PROFIL SAYFASI */}
       {activeTab === "profile" && user && (
         <ProfileView
           user={user}
@@ -1249,10 +1206,34 @@ export default function App() {
               <button
                 onClick={() => {
                   setSelectedProfile(null);
-                  setActiveChat({
-                    ...selectedProfile,
-                    ownerId: selectedProfile.ownerId,
-                  });
+                  // CLAUDE FIX: Butona basınca chat oluştur
+                  const ownerId = selectedProfile.ownerId;
+                  if (!ownerId) return;
+
+                  const chatData = {
+                    id: [user.uid, ownerId].sort().join("_"),
+                    ownerId: ownerId,
+                    name: selectedProfile.name,
+                    image: selectedProfile.image,
+                  };
+
+                  setDoc(
+                    doc(db, "chats", chatData.id),
+                    {
+                      participants: [user.uid, ownerId],
+                      users: {
+                        [user.uid]: { name: user.name, image: user.image },
+                        [ownerId]: {
+                          name: selectedProfile.name,
+                          image: selectedProfile.image,
+                        },
+                      },
+                      lastUpdated: serverTimestamp(),
+                    },
+                    { merge: true }
+                  );
+
+                  setActiveChat(chatData);
                 }}
                 className="w-full bg-pink-600 text-white py-3 rounded-xl font-bold shadow-lg"
               >
@@ -1294,12 +1275,10 @@ export default function App() {
   );
 }
 
-// --- YARDIMCI BİLEŞENLER (Modallar vb. aynı kalıyor, sadece stilleri koruduk) ---
+// --- MODALLAR ---
 function AuthModal({ mode, setMode, onClose, onSubmit }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-
   return (
     <div className="fixed inset-0 bg-black/50 dark:bg-black/90 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
       <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl w-full max-w-sm p-8 relative shadow-2xl">
@@ -1312,31 +1291,15 @@ function AuthModal({ mode, setMode, onClose, onSubmit }) {
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white text-center mb-6">
           {mode === "login" ? "Welcome Back" : "Join LinkUp"}
         </h2>
-
-        {error && (
-          <div className="bg-red-500/10 border border-red-500 text-red-500 p-3 rounded-xl mb-4 text-sm">
-            {error}
-          </div>
-        )}
-
         <form
-          onSubmit={async (e) => {
-            e.preventDefault();
-            setError("");
-            try {
-              await onSubmit(email, password, mode);
-            } catch (err) {
-              setError(getFriendlyErrorMessage(err.code));
-            }
-          }}
+          onSubmit={(e) => onSubmit(e, email, password)}
           className="space-y-4"
         >
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none focus:border-pink-500"
-            style={{ color: "white", backgroundColor: "#1f2937" }}
+            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none focus:border-pink-500 transition-colors placeholder:text-gray-400 dark:placeholder:text-gray-500"
             placeholder="Email"
             required
           />
@@ -1344,8 +1307,7 @@ function AuthModal({ mode, setMode, onClose, onSubmit }) {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none focus:border-pink-500"
-            style={{ color: "white", backgroundColor: "#1f2937" }}
+            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none focus:border-pink-500 transition-colors placeholder:text-gray-400 dark:placeholder:text-gray-500"
             placeholder="Password"
             required
           />
@@ -1355,10 +1317,7 @@ function AuthModal({ mode, setMode, onClose, onSubmit }) {
         </form>
         <div className="mt-6 text-center text-sm">
           <button
-            onClick={() => {
-              setError("");
-              setMode(mode === "login" ? "signup" : "login");
-            }}
+            onClick={() => setMode(mode === "login" ? "signup" : "login")}
             className="text-pink-600 font-bold hover:underline"
           >
             {mode === "login" ? "Create Account" : "Login instead"}
@@ -1431,8 +1390,7 @@ function OnboardingModal({ onComplete, initialData }) {
             <input
               value={data.name}
               onChange={(e) => setData({ ...data, name: e.target.value })}
-              className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none mt-1"
-              style={{ color: "white", backgroundColor: "#1f2937" }}
+              className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none mt-1 focus:border-pink-500 transition-colors placeholder:text-gray-400 dark:placeholder:text-gray-500"
               placeholder="e.g. Jessica Rabbit"
             />
           </div>
@@ -1443,8 +1401,7 @@ function OnboardingModal({ onComplete, initialData }) {
             <textarea
               value={data.bio}
               onChange={(e) => setData({ ...data, bio: e.target.value })}
-              className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none mt-1"
-              style={{ color: "white", backgroundColor: "#1f2937" }}
+              className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none mt-1 focus:border-pink-500 transition-colors placeholder:text-gray-400 dark:placeholder:text-gray-500"
               placeholder="Tell us about yourself..."
               rows="3"
               maxLength={500}
@@ -1463,8 +1420,7 @@ function OnboardingModal({ onComplete, initialData }) {
                 onChange={(e) =>
                   setData({ ...data, instagram: e.target.value })
                 }
-                className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-2 text-gray-900 dark:text-white text-sm outline-none mt-1"
-                style={{ color: "white", backgroundColor: "#1f2937" }}
+                className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-2 text-gray-900 dark:text-white text-sm outline-none mt-1 focus:border-pink-500 transition-colors placeholder:text-gray-400 dark:placeholder:text-gray-500"
                 placeholder="username"
               />
             </div>
@@ -1475,8 +1431,7 @@ function OnboardingModal({ onComplete, initialData }) {
               <input
                 value={data.twitter}
                 onChange={(e) => setData({ ...data, twitter: e.target.value })}
-                className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-2 text-gray-900 dark:text-white text-sm outline-none mt-1"
-                style={{ color: "white", backgroundColor: "#1f2937" }}
+                className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-2 text-gray-900 dark:text-white text-sm outline-none mt-1 focus:border-pink-500 transition-colors placeholder:text-gray-400 dark:placeholder:text-gray-500"
                 placeholder="username"
               />
             </div>
@@ -1488,8 +1443,7 @@ function OnboardingModal({ onComplete, initialData }) {
             <input
               value={data.onlyfans}
               onChange={(e) => setData({ ...data, onlyfans: e.target.value })}
-              className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-2 text-gray-900 dark:text-white text-sm outline-none mt-1"
-              style={{ color: "white", backgroundColor: "#1f2937" }}
+              className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-2 text-gray-900 dark:text-white text-sm outline-none mt-1 focus:border-pink-500 transition-colors placeholder:text-gray-400 dark:placeholder:text-gray-500"
               placeholder="https://..."
             />
           </div>
@@ -1529,8 +1483,7 @@ function PostModal({ onClose, onSubmit }) {
           <select
             value={formData.type}
             onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-            className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none"
-            style={{ color: "white", backgroundColor: "#1f2937" }}
+            className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none focus:border-pink-500"
           >
             {CATEGORIES.map((c) => (
               <option key={c.id} value={c.id}>
@@ -1544,16 +1497,14 @@ function PostModal({ onClose, onSubmit }) {
               setFormData({ ...formData, location: e.target.value })
             }
             placeholder="Location"
-            className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none"
-            style={{ color: "white", backgroundColor: "#1f2937" }}
+            className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none focus:border-pink-500"
           />
           <textarea
             rows="3"
             value={formData.desc}
             onChange={(e) => setFormData({ ...formData, desc: e.target.value })}
             placeholder="Details..."
-            className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none"
-            style={{ color: "white", backgroundColor: "#1f2937" }}
+            className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none focus:border-pink-500"
           ></textarea>
           <div className="flex gap-2 text-sm font-bold">
             <div
