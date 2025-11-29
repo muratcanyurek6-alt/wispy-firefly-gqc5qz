@@ -1409,6 +1409,202 @@ export default function App() {
 }
 
 // --- POST MODAL (CLAUDE FIX: relative parent) ---
+// --- MODAL BİLEŞENLERİ (PostModal'dan ÖNCE ekle) ---
+
+// AUTH MODAL
+function AuthModal({ mode, setMode, onClose, onSubmit }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  return (
+    <div className="fixed inset-0 bg-black/50 dark:bg-black/90 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl w-full max-w-sm p-8 relative shadow-2xl">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 dark:hover:text-white"
+        >
+          <X className="h-5 w-5" />
+        </button>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white text-center mb-6">
+          {mode === "login" ? "Welcome Back" : "Join LinkUp"}
+        </h2>
+        <form
+          onSubmit={(e) => onSubmit(e, email, password)}
+          className="space-y-4"
+        >
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none focus:border-pink-500 transition-colors placeholder:text-gray-400 dark:placeholder:text-gray-500"
+            placeholder="Email"
+            required
+          />
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none focus:border-pink-500 transition-colors placeholder:text-gray-400 dark:placeholder:text-gray-500"
+            placeholder="Password"
+            required
+          />
+          <button
+            type="submit"
+            className="w-full bg-pink-600 hover:bg-pink-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-pink-600/20 transition-colors"
+          >
+            {mode === "login" ? "Login" : "Sign Up"}
+          </button>
+        </form>
+        <div className="mt-6 text-center text-sm">
+          <button
+            onClick={() => setMode(mode === "login" ? "signup" : "login")}
+            className="text-pink-600 font-bold hover:underline"
+          >
+            {mode === "login" ? "Create Account" : "Login instead"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ONBOARDING MODAL
+function OnboardingModal({ onComplete, initialData }) {
+  const [data, setData] = useState(
+    initialData || {
+      name: "",
+      image: `https://api.dicebear.com/9.x/avataaars/svg?seed=${Math.floor(
+        Math.random() * 1000
+      )}`,
+      bio: "",
+      instagram: "",
+      twitter: "",
+      onlyfans: "",
+    }
+  );
+  const [uploading, setUploading] = useState(false);
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setUploading(true);
+      uploadImageToCloudinary(file).then((url) => {
+        if (url) setData({ ...data, image: url });
+        setUploading(false);
+      });
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/95 z-[80] flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl w-full max-w-md p-8 text-center shadow-2xl max-h-[90vh] overflow-y-auto relative">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+          {initialData ? "Edit Profile" : "Setup Profile"}
+        </h2>
+
+        {/* FOTOĞRAF YÜKLEME */}
+        <div className="relative w-24 h-24 mx-auto mb-4 group cursor-pointer">
+          <img
+            src={data.image}
+            className="w-full h-full rounded-full border-4 border-gray-200 dark:border-gray-800 object-cover"
+            alt="Profile"
+          />
+          <label
+            htmlFor="file-upload"
+            className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white text-xs font-bold cursor-pointer"
+          >
+            {uploading ? "Loading..." : "Upload"}
+          </label>
+          <input
+            id="file-upload"
+            type="file"
+            className="hidden"
+            accept="image/*"
+            onChange={handleImageUpload}
+          />
+        </div>
+
+        <div className="space-y-4 text-left">
+          <div>
+            <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">
+              Display Name
+            </label>
+            <input
+              value={data.name}
+              onChange={(e) => setData({ ...data, name: e.target.value })}
+              className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none mt-1 focus:border-pink-500 transition-colors placeholder:text-gray-400 dark:placeholder:text-gray-500"
+              placeholder="e.g. Jessica Rabbit"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">
+              About You (Bio)
+            </label>
+            <textarea
+              value={data.bio}
+              onChange={(e) => setData({ ...data, bio: e.target.value })}
+              className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none mt-1 focus:border-pink-500 transition-colors placeholder:text-gray-400 dark:placeholder:text-gray-500"
+              placeholder="Tell us about yourself..."
+              rows="3"
+              maxLength={500}
+            />
+            <div className="text-right text-[10px] text-gray-400">
+              {data.bio?.length || 0}/500
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">
+                Instagram
+              </label>
+              <input
+                value={data.instagram}
+                onChange={(e) =>
+                  setData({ ...data, instagram: e.target.value })
+                }
+                className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-2 text-gray-900 dark:text-white text-sm outline-none mt-1 focus:border-pink-500 transition-colors placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                placeholder="username"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">
+                Twitter / X
+              </label>
+              <input
+                value={data.twitter}
+                onChange={(e) => setData({ ...data, twitter: e.target.value })}
+                className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-2 text-gray-900 dark:text-white text-sm outline-none mt-1 focus:border-pink-500 transition-colors placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                placeholder="username"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">
+              OnlyFans / Linktree
+            </label>
+            <input
+              value={data.onlyfans}
+              onChange={(e) => setData({ ...data, onlyfans: e.target.value })}
+              className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-2 text-gray-900 dark:text-white text-sm outline-none mt-1 focus:border-pink-500 transition-colors placeholder:text-gray-400 dark:placeholder:text-gray-500"
+              placeholder="https://..."
+            />
+          </div>
+        </div>
+
+        <button
+          onClick={() => onComplete(data)}
+          className="w-full bg-pink-600 hover:bg-pink-700 text-white font-bold py-3.5 rounded-xl shadow-lg mt-6 transition-colors"
+        >
+          {initialData ? "Update Profile" : "Complete Profile"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function PostModal({ onClose, onSubmit }) {
   const [formData, setFormData] = useState({
     type: "COLLAB",
