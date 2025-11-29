@@ -28,21 +28,31 @@ import {
 import {
   MapPin,
   Users,
+  Camera,
   PlusSquare,
   Search,
   CheckCircle,
   Star,
   Zap,
   X,
+  Building2,
   Edit2,
   Trash2,
   Loader2,
+  Mail,
+  Lock,
+  ArrowRight,
   MessageCircle,
+  ShieldCheck,
+  Upload,
+  Sparkles,
   Link as LinkIcon,
   Instagram,
   Twitter,
   Crown,
   Send,
+  AlertCircle,
+  TrendingUp,
   Flame,
   Database,
   LogOut,
@@ -51,7 +61,7 @@ import {
   Home,
   Wand2,
   User,
-  TrendingUp,
+  Settings,
 } from "lucide-react";
 
 // --- TASARIM KURTARICI (CDN) ---
@@ -64,14 +74,13 @@ const TailwindCDN = () => (
     <style>{`
       .no-scrollbar::-webkit-scrollbar { display: none; }
       .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-      .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom); }
     `}</style>
   </>
 );
 
-/* --- CLOUDINARY AYARLARI --- */
+/* --- CLOUDINARY AYARLARI (DÜZELTİLDİ) --- */
 const CLOUDINARY_CONFIG = {
-  cloudName: "dqoh1mjjk",
+  cloudName: "dqoh1mjjk", // <-- BURASI DÜZELTİLDİ
   uploadPreset: "yxdnini8",
 };
 
@@ -86,7 +95,7 @@ const firebaseConfig = {
   measurementId: "G-QNG54EJ9R5",
 };
 
-const apiKey = ""; // Gemini API Key
+const apiKey = "";
 
 /* --- SİSTEM BAŞLATILIYOR --- */
 const app = initializeApp(firebaseConfig);
@@ -120,17 +129,17 @@ const uploadImageToCloudinary = async (file) => {
     return data.secure_url;
   } catch (error) {
     console.error("Resim yükleme hatası:", error);
-    alert("Resim yüklenemedi. Ayarları kontrol et.");
+    alert("Resim yüklenemedi. Lütfen tekrar deneyin.");
     return null;
   }
 };
 
 /* --- SAHTE VERİ OLUŞTURUCU --- */
 const generateFakeData = async () => {
-  alert("⚠️ Fake Data özelliği kodda mevcut ama buton gizli.");
+  alert("⚠️ Fake Data: Kodda mevcut.");
 };
 
-// --- NAV ITEM COMPONENT (Mobil İçin) ---
+// --- NAV ITEM COMPONENT (ÜST & ALT MENÜ İÇİN ORTAK) ---
 const NavItem = ({
   tab,
   icon: Icon,
@@ -140,45 +149,63 @@ const NavItem = ({
   requireAuth,
   setEditingPost,
   setShowPostModal,
-}) => (
-  <button
-    onClick={() => {
-      if (tab === "post") {
-        requireAuth(() => {
-          setEditingPost(null);
-          setShowPostModal(true);
-        });
-      } else if (tab === "profile" || tab === "chat") {
-        requireAuth(() => {
-          setActiveTab(tab);
-          window.scrollTo(0, 0);
-        });
-      } else {
-        setActiveTab(tab);
+  setShowOnboarding,
+  mobileOnly,
+}) => {
+  const handleClick = () => {
+    if (tab === "post") {
+      requireAuth(() => {
+        setEditingPost(null);
+        setShowPostModal(true);
+      });
+    } else if (tab === "profile") {
+      requireAuth(() => {
+        setActiveTab("profile");
         window.scrollTo(0, 0);
-      }
-    }}
-    className={`flex flex-col items-center justify-center w-full py-1 ${
-      activeTab === tab ? "text-pink-500" : "text-gray-500 dark:text-gray-400"
-    }`}
-  >
-    <Icon
-      className={`h-6 w-6 ${activeTab === tab ? "fill-current" : ""}`}
-      strokeWidth={activeTab === tab ? 2.5 : 2}
-    />
-    <span className="text-[10px] mt-0.5 font-medium">{label}</span>
-  </button>
-);
+      });
+    } else if (tab === "chat") {
+      requireAuth(() => {
+        setActiveTab("chat");
+        window.scrollTo(0, 0);
+      });
+    } else {
+      setActiveTab(tab);
+      window.scrollTo(0, 0);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      className={`flex flex-col items-center justify-center px-3 py-1 transition-colors ${
+        mobileOnly ? "md:hidden w-full" : ""
+      } ${
+        activeTab === tab
+          ? "text-pink-500"
+          : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+      }`}
+    >
+      <Icon
+        className={`h-6 w-6 ${activeTab === tab ? "fill-current" : ""}`}
+        strokeWidth={activeTab === tab ? 2.5 : 2}
+      />
+      {mobileOnly && (
+        <span className="text-[10px] mt-0.5 font-medium">{label}</span>
+      )}
+    </button>
+  );
+};
 
 // --- SPOTLIGHT BİLEŞENİ ---
 const Spotlight = ({ posts, onProfileClick }) => {
   const scrollRef = React.useRef(null);
   const [isPaused, setIsPaused] = useState(false);
-  const loopPosts = posts.length > 0 ? [...posts, ...posts, ...posts] : [];
+  const loopPosts = [...posts, ...posts, ...posts];
 
   useEffect(() => {
     const scrollContainer = scrollRef.current;
     if (!scrollContainer) return;
+    let scrollAmount = 0;
     const scrollStep = 1;
 
     const scrollInterval = setInterval(() => {
@@ -245,13 +272,14 @@ const Spotlight = ({ posts, onProfileClick }) => {
   );
 };
 
-// --- MESSAGES VIEW ---
+// --- CHAT LIST BİLEŞENİ (DÜZELTİLDİ) ---
 const MessagesView = ({ user, setActiveChat }) => {
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) return;
+    // Sadece kullanıcının dahil olduğu sohbetleri getir
     const q = query(
       collection(db, "chats"),
       where("participants", "array-contains", user.uid),
@@ -261,15 +289,16 @@ const MessagesView = ({ user, setActiveChat }) => {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const chatList = snapshot.docs.map((doc) => {
         const data = doc.data();
+        // Karşı tarafın ID'sini ve bilgilerini bul
         const otherUserId = data.participants.find((id) => id !== user.uid);
         const otherUser = data.users[otherUserId] || {
-          name: "Unknown",
-          image: "",
+          name: "Unknown User",
+          image: "https://via.placeholder.com/150",
         };
 
         return {
-          id: doc.id,
-          ownerId: otherUserId,
+          id: doc.id, // Chat Document ID
+          ownerId: otherUserId, // Karşı tarafın ID'si (önemli)
           name: otherUser.name,
           image: otherUser.image,
           lastMessage: data.lastMessage,
@@ -295,6 +324,9 @@ const MessagesView = ({ user, setActiveChat }) => {
         <div className="text-center py-20 border border-dashed border-gray-300 dark:border-gray-800 rounded-2xl">
           <MessageCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <p className="text-gray-500 dark:text-gray-400">No messages yet.</p>
+          <p className="text-xs text-gray-400 mt-2">
+            Start chatting from a post!
+          </p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -302,7 +334,7 @@ const MessagesView = ({ user, setActiveChat }) => {
             <div
               key={chat.id}
               onClick={() => setActiveChat(chat)}
-              className="flex items-center gap-4 p-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              className="flex items-center gap-4 p-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors shadow-sm"
             >
               <img
                 src={chat.image}
@@ -314,10 +346,14 @@ const MessagesView = ({ user, setActiveChat }) => {
                     {chat.name}
                   </h3>
                   <span className="text-[10px] text-gray-400">
-                    {chat.time?.toDate().toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+                    {chat.time?.toDate
+                      ? chat.time
+                          .toDate()
+                          .toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                      : "Just now"}
                   </span>
                 </div>
                 <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
@@ -332,10 +368,11 @@ const MessagesView = ({ user, setActiveChat }) => {
   );
 };
 
-// --- CHAT MODAL ---
+// --- CHAT MODAL (DÜZELTİLDİ) ---
 const ChatModal = ({ activeChat, setActiveChat, user }) => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
+  // Chat ID: İki kullanıcının ID'sini alfabetik sıraya göre birleştirerek benzersiz ID oluşturur
   const chatId = [user.uid, activeChat.ownerId].sort().join("_");
   const messagesEndRef = useRef(null);
 
@@ -363,12 +400,14 @@ const ChatModal = ({ activeChat, setActiveChat, user }) => {
     const messageText = newMessage;
     setNewMessage("");
 
+    // 1. Mesajı ekle
     await addDoc(collection(db, "chats", chatId, "messages"), {
       text: messageText,
       senderId: user.uid,
       createdAt: serverTimestamp(),
     });
 
+    // 2. Ana sohbet kaydını güncelle (yoksa oluştur)
     const chatRef = doc(db, "chats", chatId);
     await setDoc(
       chatRef,
@@ -383,15 +422,14 @@ const ChatModal = ({ activeChat, setActiveChat, user }) => {
         },
         lastMessage: messageText,
         lastUpdated: serverTimestamp(),
-        createdAt: serverTimestamp(),
       },
       { merge: true }
     );
   };
 
   return (
-    <div className="fixed bottom-0 right-0 md:right-4 w-full md:w-80 h-[100dvh] md:h-[500px] bg-white dark:bg-gray-900 border-t md:border border-gray-200 dark:border-gray-800 md:rounded-t-2xl z-[100] flex flex-col shadow-2xl">
-      <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex justify-between bg-white dark:bg-gray-900 md:rounded-t-2xl items-center safe-area-top">
+    <div className="fixed bottom-0 right-0 md:right-4 w-full md:w-96 h-[100dvh] md:h-[500px] bg-white dark:bg-gray-900 border-t md:border border-gray-200 dark:border-gray-800 md:rounded-t-2xl z-[100] flex flex-col shadow-2xl">
+      <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex justify-between bg-white dark:bg-gray-900 md:rounded-t-2xl items-center">
         <div className="flex items-center gap-3">
           <img
             src={activeChat.image}
@@ -432,7 +470,7 @@ const ChatModal = ({ activeChat, setActiveChat, user }) => {
         <input
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
-          className="w-full bg-gray-100 dark:bg-gray-950 rounded-full px-4 py-3 text-gray-900 dark:text-white outline-none border border-gray-200 dark:border-gray-800 placeholder:text-gray-400 dark:placeholder:text-gray-600 focus:border-pink-500 transition-colors"
+          className="w-full bg-gray-100 dark:bg-gray-950 rounded-full px-4 py-3 text-gray-900 dark:text-white outline-none border border-gray-200 dark:border-gray-800 placeholder:text-gray-400 dark:placeholder:text-gray-600"
           placeholder="Type a message..."
           autoFocus
         />
@@ -447,13 +485,13 @@ const ChatModal = ({ activeChat, setActiveChat, user }) => {
   );
 };
 
-// --- PROFILE VIEW ---
+// --- PROFİL SAYFASI BİLEŞENİ (DÜZELTİLDİ) ---
 const ProfileView = ({ user, setShowOnboarding, handleLogout, posts }) => {
   const myPosts = posts.filter((p) => p.ownerId === user.uid);
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 pb-24">
-      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-lg text-center mb-8">
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-lg text-center mb-8 relative">
         <div className="relative inline-block">
           <img
             src={user.image}
@@ -538,13 +576,16 @@ const ProfileView = ({ user, setShowOnboarding, handleLogout, posts }) => {
   );
 };
 
-const AIStudio = () => (
-  <div className="p-4 text-center text-gray-500 flex items-center justify-center h-[50vh]">
-    AI Studio Coming Soon...
-  </div>
-);
+// --- AI STUDIO BİLEŞENİ ---
+const AIStudio = ({ user, requireAuth }) => {
+  return (
+    <div className="p-4 text-center text-gray-500 flex items-center justify-center h-[50vh]">
+      AI Studio Coming Soon...
+    </div>
+  );
+};
 
-// --- MAIN APP ---
+// --- ANA UYGULAMA ---
 export default function App() {
   const [activeTab, setActiveTab] = useState("feed");
   const [posts, setPosts] = useState([]);
@@ -560,6 +601,7 @@ export default function App() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showPostModal, setShowPostModal] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState(null);
   const [activeChat, setActiveChat] = useState(null);
   const [editingPost, setEditingPost] = useState(null);
@@ -681,7 +723,7 @@ export default function App() {
           uid: auth.currentUser.uid,
         },
         { merge: true }
-      );
+      ); // Merge true to update
       window.location.reload();
     }
     setShowOnboarding(false);
@@ -691,6 +733,7 @@ export default function App() {
     if (window.confirm("Çıkış yapmak istiyor musun?")) {
       await signOut(auth);
       setActiveChat(null);
+      setActiveTab("feed");
     }
   };
 
@@ -769,9 +812,9 @@ export default function App() {
     >
       <TailwindCDN />
 
-      {/* NAVBAR */}
+      {/* ÜST NAVBAR */}
       <nav className="sticky top-0 z-40 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800 transition-colors duration-300">
-        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between relative">
+        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           <div
             className="flex items-center gap-2 cursor-pointer"
             onClick={() => {
@@ -787,44 +830,40 @@ export default function App() {
             </h1>
           </div>
 
-          {/* MASAÜSTÜ ORTA MENÜ (YENİ EKLENDİ) */}
-          {user && (
-            <div className="hidden md:flex items-center gap-8 absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
-              <button
-                onClick={() => setActiveTab("feed")}
-                className={`p-2 rounded-xl transition-colors ${
-                  activeTab === "feed"
-                    ? "bg-pink-50 dark:bg-pink-900/20 text-pink-600"
-                    : "text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
-                }`}
-                title="Home"
-              >
-                <Home className="h-5 w-5" />
-              </button>
-              <button
-                onClick={() => setActiveTab("chat")}
-                className={`p-2 rounded-xl transition-colors ${
-                  activeTab === "chat"
-                    ? "bg-pink-50 dark:bg-pink-900/20 text-pink-600"
-                    : "text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
-                }`}
-                title="Messages"
-              >
-                <MessageCircle className="h-5 w-5" />
-              </button>
-              <button
-                onClick={() => setActiveTab("ai-studio")}
-                className={`p-2 rounded-xl transition-colors ${
-                  activeTab === "ai-studio"
-                    ? "bg-pink-50 dark:bg-pink-900/20 text-pink-600"
-                    : "text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
-                }`}
-                title="AI Studio"
-              >
-                <Wand2 className="h-5 w-5" />
-              </button>
-            </div>
-          )}
+          {/* DESKTOP MENÜ */}
+          <div className="hidden md:flex items-center gap-6">
+            <NavItem
+              tab="feed"
+              icon={Home}
+              label="Home"
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+            />
+            <NavItem
+              tab="chat"
+              icon={MessageCircle}
+              label="Chat"
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              requireAuth={requireAuth}
+            />
+            <NavItem
+              tab="ai-studio"
+              icon={Wand2}
+              label="AI"
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              requireAuth={requireAuth}
+            />
+            <NavItem
+              tab="profile"
+              icon={User}
+              label="Profile"
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              requireAuth={requireAuth}
+            />
+          </div>
 
           <div className="flex items-center gap-3">
             <button
@@ -837,25 +876,7 @@ export default function App() {
                 <Moon className="h-5 w-5" />
               )}
             </button>
-            {user ? (
-              <div className="flex items-center gap-3">
-                <img
-                  src={user.image}
-                  className="h-8 w-8 rounded-full object-cover border border-gray-300 dark:border-gray-600 cursor-pointer hidden md:block"
-                  onClick={() => setActiveTab("profile")}
-                  title="Profile"
-                />
-                <button
-                  onClick={() => {
-                    setEditingPost(null);
-                    setShowPostModal(true);
-                  }}
-                  className="hidden md:flex bg-pink-600 hover:bg-pink-700 text-white px-4 py-1.5 rounded-full text-xs font-bold shadow-lg shadow-pink-600/20 items-center gap-2"
-                >
-                  <PlusSquare className="h-4 w-4" /> Post Ad
-                </button>
-              </div>
-            ) : (
+            {!user && (
               <button
                 onClick={() => {
                   setAuthMode("login");
@@ -866,11 +887,27 @@ export default function App() {
                 Login
               </button>
             )}
+            {user && (
+              <div className="hidden md:flex items-center gap-3">
+                <img
+                  src={user.image}
+                  className="h-8 w-8 rounded-full object-cover border border-gray-600"
+                />
+                <button
+                  onClick={handleLogout}
+                  className="text-red-500 hover:bg-red-500/10 p-2 rounded-full transition-colors"
+                >
+                  <LogOut className="h-5 w-5" />
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </nav>
 
-      {/* İÇERİK */}
+      {/* İÇERİK YÖNETİMİ */}
+
+      {/* 1. FEED SAYFASI */}
       {activeTab === "feed" && (
         <>
           <div className="relative bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 transition-colors duration-300 pt-4 pb-4">
@@ -1015,10 +1052,15 @@ export default function App() {
         </>
       )}
 
+      {/* 2. AI STUDIO */}
       {activeTab === "ai-studio" && <AIStudio />}
+
+      {/* 3. CHAT SAYFASI */}
       {activeTab === "chat" && (
         <MessagesView user={user} setActiveChat={setActiveChat} />
       )}
+
+      {/* 4. PROFIL SAYFASI */}
       {activeTab === "profile" && user && (
         <ProfileView
           user={user}
@@ -1028,7 +1070,7 @@ export default function App() {
         />
       )}
 
-      {/* BOTTOM NAV */}
+      {/* BOTTOM NAV (MOBİL İÇİN) */}
       <div className="md:hidden fixed bottom-0 w-full bg-white/90 dark:bg-gray-900/90 backdrop-blur-lg border-t border-gray-200 dark:border-gray-800 flex justify-around items-center z-50 safe-area-bottom pb-1">
         <NavItem
           tab="feed"
@@ -1076,7 +1118,7 @@ export default function App() {
         />
       </div>
 
-      {/* MODALLAR (DÜZELTİLDİ: Inline Style SİLİNDİ) */}
+      {/* MODALLAR */}
       {showAuthModal && (
         <AuthModal
           mode={authMode}
@@ -1207,7 +1249,7 @@ export default function App() {
   );
 }
 
-// --- DÜZELTİLMİŞ MODALLAR (INLINE STYLE YOK) ---
+// --- YARDIMCI BİLEŞENLER (Modallar vb. aynı kalıyor, sadece stilleri koruduk) ---
 function AuthModal({ mode, setMode, onClose, onSubmit }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -1231,7 +1273,8 @@ function AuthModal({ mode, setMode, onClose, onSubmit }) {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none focus:border-pink-500 transition-colors placeholder:text-gray-400 dark:placeholder:text-gray-500"
+            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none focus:border-pink-500"
+            style={{ color: "white", backgroundColor: "#1f2937" }}
             placeholder="Email"
             required
           />
@@ -1239,7 +1282,8 @@ function AuthModal({ mode, setMode, onClose, onSubmit }) {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none focus:border-pink-500 transition-colors placeholder:text-gray-400 dark:placeholder:text-gray-500"
+            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none focus:border-pink-500"
+            style={{ color: "white", backgroundColor: "#1f2937" }}
             placeholder="Password"
             required
           />
@@ -1322,7 +1366,8 @@ function OnboardingModal({ onComplete, initialData }) {
             <input
               value={data.name}
               onChange={(e) => setData({ ...data, name: e.target.value })}
-              className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none mt-1 focus:border-pink-500 transition-colors placeholder:text-gray-400 dark:placeholder:text-gray-500"
+              className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none mt-1"
+              style={{ color: "white", backgroundColor: "#1f2937" }}
               placeholder="e.g. Jessica Rabbit"
             />
           </div>
@@ -1333,7 +1378,8 @@ function OnboardingModal({ onComplete, initialData }) {
             <textarea
               value={data.bio}
               onChange={(e) => setData({ ...data, bio: e.target.value })}
-              className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none mt-1 focus:border-pink-500 transition-colors placeholder:text-gray-400 dark:placeholder:text-gray-500"
+              className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none mt-1"
+              style={{ color: "white", backgroundColor: "#1f2937" }}
               placeholder="Tell us about yourself..."
               rows="3"
               maxLength={500}
@@ -1352,7 +1398,8 @@ function OnboardingModal({ onComplete, initialData }) {
                 onChange={(e) =>
                   setData({ ...data, instagram: e.target.value })
                 }
-                className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-2 text-gray-900 dark:text-white text-sm outline-none mt-1 focus:border-pink-500 transition-colors placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-2 text-gray-900 dark:text-white text-sm outline-none mt-1"
+                style={{ color: "white", backgroundColor: "#1f2937" }}
                 placeholder="username"
               />
             </div>
@@ -1363,7 +1410,8 @@ function OnboardingModal({ onComplete, initialData }) {
               <input
                 value={data.twitter}
                 onChange={(e) => setData({ ...data, twitter: e.target.value })}
-                className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-2 text-gray-900 dark:text-white text-sm outline-none mt-1 focus:border-pink-500 transition-colors placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-2 text-gray-900 dark:text-white text-sm outline-none mt-1"
+                style={{ color: "white", backgroundColor: "#1f2937" }}
                 placeholder="username"
               />
             </div>
@@ -1375,7 +1423,8 @@ function OnboardingModal({ onComplete, initialData }) {
             <input
               value={data.onlyfans}
               onChange={(e) => setData({ ...data, onlyfans: e.target.value })}
-              className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-2 text-gray-900 dark:text-white text-sm outline-none mt-1 focus:border-pink-500 transition-colors placeholder:text-gray-400 dark:placeholder:text-gray-500"
+              className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-2 text-gray-900 dark:text-white text-sm outline-none mt-1"
+              style={{ color: "white", backgroundColor: "#1f2937" }}
               placeholder="https://..."
             />
           </div>
@@ -1415,7 +1464,8 @@ function PostModal({ onClose, onSubmit }) {
           <select
             value={formData.type}
             onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-            className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none focus:border-pink-500"
+            className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none"
+            style={{ color: "white", backgroundColor: "#1f2937" }}
           >
             {CATEGORIES.map((c) => (
               <option key={c.id} value={c.id}>
@@ -1429,14 +1479,16 @@ function PostModal({ onClose, onSubmit }) {
               setFormData({ ...formData, location: e.target.value })
             }
             placeholder="Location"
-            className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none focus:border-pink-500"
+            className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none"
+            style={{ color: "white", backgroundColor: "#1f2937" }}
           />
           <textarea
             rows="3"
             value={formData.desc}
             onChange={(e) => setFormData({ ...formData, desc: e.target.value })}
             placeholder="Details..."
-            className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none focus:border-pink-500"
+            className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none"
+            style={{ color: "white", backgroundColor: "#1f2937" }}
           ></textarea>
           <div className="flex gap-2 text-sm font-bold">
             <div
