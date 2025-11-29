@@ -64,16 +64,34 @@ import {
   Settings,
 } from "lucide-react";
 
-// --- TASARIM KURTARICI (CDN) ---
+// --- TASARIM KURTARICI (MODERN TAILWIND v3) ---
 const TailwindCDN = () => (
   <>
-    <link
-      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
-      rel="stylesheet"
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script
+      dangerouslySetInnerHTML={{
+        __html: `
+        tailwind.config = {
+          darkMode: 'class',
+          theme: {
+            extend: {
+              colors: {
+                gray: {
+                  900: '#111827',
+                  800: '#1f2937',
+                  700: '#374151',
+                }
+              }
+            }
+          }
+        }
+      `,
+      }}
     />
     <style>{`
       .no-scrollbar::-webkit-scrollbar { display: none; }
       .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom); }
     `}</style>
   </>
 );
@@ -94,8 +112,6 @@ const firebaseConfig = {
   appId: "1:189601473644:web:b9e7f2339faf83e7ede449",
   measurementId: "G-QNG54EJ9R5",
 };
-
-const apiKey = "";
 
 /* --- SİSTEM BAŞLATILIYOR --- */
 const app = initializeApp(firebaseConfig);
@@ -146,8 +162,14 @@ const uploadImageToCloudinary = async (file) => {
       `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloudName}/image/upload`,
       { method: "POST", body: formData }
     );
+
+    if (!res.ok) {
+      const err = await res.text();
+      console.error("Cloudinary Hatası:", err);
+      throw new Error("Yükleme başarısız");
+    }
+
     const data = await res.json();
-    if (data.error) throw new Error(data.error.message);
     return data.secure_url;
   } catch (error) {
     console.error("Resim yükleme hatası:", error);
@@ -293,7 +315,7 @@ const Spotlight = ({ posts, onProfileClick }) => {
   );
 };
 
-// --- CHAT LIST BİLEŞENİ ---
+// --- CHAT LIST BİLEŞENİ (DÜZELTİLDİ - NULL CHECK EKLENDİ) ---
 const MessagesView = ({ user, setActiveChat }) => {
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -310,7 +332,8 @@ const MessagesView = ({ user, setActiveChat }) => {
       const chatList = snapshot.docs.map((doc) => {
         const data = doc.data();
         const otherUserId = data.participants.find((id) => id !== user.uid);
-        const otherUser = data.users[otherUserId] || {
+        // GÜVENLİK: veritabanında users objesi eksikse patlamasın diye ?. (optional chaining) kullanıyoruz
+        const otherUser = data.users?.[otherUserId] || {
           name: "Unknown",
           image: "https://via.placeholder.com/150",
         };
@@ -706,13 +729,17 @@ export default function App() {
   }, []);
 
   const handleAuthSubmit = async (email, password, mode) => {
-    if (mode === "login") {
-      await signInWithEmailAndPassword(auth, email, password);
-    } else {
-      await createUserWithEmailAndPassword(auth, email, password);
+    try {
+      if (mode === "login") {
+        await signInWithEmailAndPassword(auth, email, password);
+      } else {
+        await createUserWithEmailAndPassword(auth, email, password);
+      }
+      setShowAuthModal(false);
+      if (mode === "signup") setShowOnboarding(true);
+    } catch (error) {
+      throw error;
     }
-    setShowAuthModal(false);
-    if (mode === "signup") setShowOnboarding(true);
   };
 
   const handleCompleteOnboarding = async (profileData) => {
