@@ -59,7 +59,7 @@ import {
   MoreVertical,
 } from "lucide-react";
 
-// --- STYLE & CDN ---
+// --- TASARIM KURTARICI ---
 const TailwindCDN = () => (
   <>
     <link
@@ -76,13 +76,13 @@ const TailwindCDN = () => (
   </>
 );
 
-/* --- CLOUDINARY CONFIG --- */
+/* --- CLOUDINARY AYARLARI --- */
 const CLOUDINARY_CONFIG = {
   cloudName: "dqoh1mjjk",
   uploadPreset: "yxdnini8",
 };
 
-/* --- FIREBASE CONFIG --- */
+/* --- FIREBASE AYARLARI --- */
 const firebaseConfig = {
   apiKey: "AIzaSyAQmTeBxY21B0y51uJVfGCirJIi4xuSeWE",
   authDomain: "linkup-app-6318c.firebaseapp.com",
@@ -95,12 +95,12 @@ const firebaseConfig = {
 
 const apiKey = ""; // Gemini API Key
 
-/* --- INITIALIZE SYSTEM --- */
+/* --- SİSTEM BAŞLATILIYOR --- */
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-/* --- CATEGORIES --- */
+/* --- KATEGORİLER --- */
 const CATEGORIES = [
   { id: "COLLAB", label: "Collab 🎥", color: "purple" },
   { id: "S4S", label: "S4S / Promo 🔄", color: "pink" },
@@ -110,7 +110,7 @@ const CATEGORIES = [
   { id: "SERVICE", label: "Services 📸", color: "orange" },
 ];
 
-/* --- IMAGE UPLOAD FUNCTION --- */
+/* --- RESİM YÜKLEME FONKSİYONU --- */
 const uploadImageToCloudinary = async (file) => {
   if (!file) return null;
   const formData = new FormData();
@@ -126,18 +126,18 @@ const uploadImageToCloudinary = async (file) => {
     if (data.error) throw new Error(data.error.message);
     return data.secure_url;
   } catch (error) {
-    console.error("Image upload error:", error);
-    alert("Image upload failed.");
+    console.error("Resim yükleme hatası:", error);
+    alert("Resim yüklenemedi.");
     return null;
   }
 };
 
-/* --- FAKE DATA GENERATOR --- */
+/* --- SAHTE VERİ OLUŞTURUCU --- */
 const generateFakeData = async () => {
-  alert("⚠️ Fake Data feature exists in code but button is hidden.");
+  alert("⚠️ Fake Data özelliği kodda mevcut ama buton gizli.");
 };
 
-// --- NAV ITEM COMPONENT (GÜÇLENDİRİLMİŞ BADGE) ---
+// --- NAV ITEM COMPONENT (DÜZELTİLDİ: BADGE ÖZELLİĞİ GERİ EKLENDİ) ---
 const NavItem = ({
   tab,
   icon: Icon,
@@ -148,7 +148,7 @@ const NavItem = ({
   setEditingPost,
   setShowPostModal,
   mobileOnly,
-  badge, // Bu özellik çok önemli
+  badge, // <-- Bu özellik silinmişti, geri ekledim.
 }) => (
   <button
     onClick={() => {
@@ -175,17 +175,16 @@ const NavItem = ({
           : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
       }`}
   >
-    <div className="relative inline-block">
+    <div className="relative">
       <Icon
         className={`h-6 w-6 ${activeTab === tab ? "fill-current" : ""}`}
         strokeWidth={activeTab === tab ? 2.5 : 2}
       />
-      {/* GÜÇLENDİRİLMİŞ KIRMIZI NOKTA */}
+      {/* KIRMIZI NOKTA (BADGE) ÇİZİMİ */}
       {badge && (
-        <span className="absolute -top-1 -right-1 block h-3 w-3 rounded-full bg-red-600 ring-2 ring-white dark:ring-gray-900 animate-pulse z-50"></span>
+        <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-red-600 rounded-full border-2 border-white dark:border-gray-900 animate-pulse z-10"></span>
       )}
     </div>
-
     <span
       className={`text-[10px] mt-0.5 font-medium ${
         mobileOnly ? "" : "md:hidden"
@@ -196,7 +195,7 @@ const NavItem = ({
   </button>
 );
 
-// --- SPOTLIGHT COMPONENT ---
+// --- SPOTLIGHT BİLEŞENİ ---
 const Spotlight = ({ posts, onProfileClick }) => {
   const scrollRef = React.useRef(null);
   const [isPaused, setIsPaused] = useState(false);
@@ -271,7 +270,7 @@ const Spotlight = ({ posts, onProfileClick }) => {
   );
 };
 
-// --- CHAT LIST COMPONENT ---
+// --- CHAT LİSTESİ BİLEŞENİ ---
 const ChatList = ({ user, activeChat, setActiveChat }) => {
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -294,7 +293,7 @@ const ChatList = ({ user, activeChat, setActiveChat }) => {
           image: "https://via.placeholder.com/150",
         };
 
-        // Okunmamış Mesaj Kontrolü (Listedeki Kırmızı Nokta)
+        // Okunmamış mesaj kontrolü
         const isUnread = data.unreadBy?.includes(user.id);
 
         return {
@@ -304,7 +303,7 @@ const ChatList = ({ user, activeChat, setActiveChat }) => {
           image: otherUser.image || "https://via.placeholder.com/150",
           lastMessage: data.lastMessage,
           time: data.lastUpdated,
-          isUnread, // Yeni veri
+          isUnread, // Bu veri listede kırmızı nokta için kullanılıyor
         };
       });
       setChats(chatList);
@@ -384,7 +383,7 @@ const ChatList = ({ user, activeChat, setActiveChat }) => {
   );
 };
 
-// --- CHAT WINDOW COMPONENT ---
+// --- CHAT PENCERESİ BİLEŞENİ ---
 const ChatWindow = ({ activeChat, setActiveChat, user }) => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
@@ -408,22 +407,18 @@ const ChatWindow = ({ activeChat, setActiveChat, user }) => {
     return () => unsubscribe();
   }, [chatId]);
 
-  // Mesajı okundu olarak işaretle (Chat açılınca)
+  // OKUNDU İŞARETLEME
   useEffect(() => {
     if (!chatId || !user) return;
     const markAsRead = async () => {
-      try {
-        const chatRef = doc(db, "chats", chatId);
-        await updateDoc(chatRef, {
-          unreadBy: arrayRemove(user.id), // Kendimi okunmamışlar listesinden sil
-        });
-      } catch (err) {
-        // Sessiz hata (önemli değil)
-        console.log("Read receipt error", err);
-      }
+      const chatRef = doc(db, "chats", chatId);
+      // unreadBy listesinden kendi ID'mi siliyorum
+      await updateDoc(chatRef, {
+        unreadBy: arrayRemove(user.id),
+      });
     };
     markAsRead();
-  }, [chatId, user, messages]); // Mesajlar değişince de tetikle
+  }, [chatId, user, messages]);
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -452,7 +447,7 @@ const ChatWindow = ({ activeChat, setActiveChat, user }) => {
         },
         lastMessage: messageText,
         lastUpdated: serverTimestamp(),
-        unreadBy: arrayUnion(activeChat.ownerId), // Karşı tarafı "okumadı" olarak işaretle
+        unreadBy: arrayUnion(activeChat.ownerId), // Karşı taraf okumadı olarak işaretle
       },
       { merge: true }
     );
@@ -463,6 +458,7 @@ const ChatWindow = ({ activeChat, setActiveChat, user }) => {
       {/* Header */}
       <div className="p-3 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center bg-white dark:bg-gray-900 z-10 shadow-sm sticky top-0 safe-area-top">
         <div className="flex items-center gap-3">
+          {/* Mobil için Geri Butonu */}
           <button
             onClick={() => setActiveChat(null)}
             className="md:hidden text-gray-500 hover:text-gray-900 dark:hover:text-white p-1"
@@ -1015,7 +1011,6 @@ export default function App() {
     }
   }, [darkMode]);
 
-  // GLOBAL USER AUTH LISTENER
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
@@ -1047,7 +1042,7 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  // GLOBAL NOTIFICATION LISTENER (UNREAD MESSAGES)
+  // GLOBAL BİLDİRİM DİNLEYİCİ (UNREAD MESSAGES)
   useEffect(() => {
     if (!user) {
       setUnreadCount(0);
@@ -1061,7 +1056,6 @@ export default function App() {
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setUnreadCount(snapshot.size);
-      console.log("Unread Count:", snapshot.size); // Debug için
     });
 
     return () => unsubscribe();
@@ -1276,7 +1270,7 @@ export default function App() {
               activeTab={activeTab}
               setActiveTab={setActiveTab}
               requireAuth={requireAuth}
-              badge={unreadCount > 0} // MASAÜSTÜ BADGE
+              badge={unreadCount > 0} // DESKTOP BADGE EKLENDİ
             />
             <NavItem
               tab="ai-studio"
@@ -1581,7 +1575,7 @@ export default function App() {
             setActiveTab={setActiveTab}
             requireAuth={requireAuth}
             mobileOnly
-            badge={unreadCount > 0} // MOBİL BADGE
+            badge={unreadCount > 0} // MOBİL BADGE EKLENDİ
           />
           <NavItem
             tab="profile"
