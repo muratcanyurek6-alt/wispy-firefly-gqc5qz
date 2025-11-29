@@ -23,6 +23,7 @@ import {
   limit,
   startAfter,
   serverTimestamp,
+  where,
 } from "firebase/firestore";
 import {
   MapPin,
@@ -64,7 +65,6 @@ import {
 } from "lucide-react";
 
 // --- TASARIM KURTARICI (CDN) ---
-// Scrollbar gizleme stili eklendi
 const TailwindCDN = () => (
   <>
     <link
@@ -72,13 +72,8 @@ const TailwindCDN = () => (
       rel="stylesheet"
     />
     <style>{`
-      .no-scrollbar::-webkit-scrollbar {
-        display: none;
-      }
-      .no-scrollbar {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
-      }
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     `}</style>
   </>
 );
@@ -140,8 +135,7 @@ const uploadImageToCloudinary = async (file) => {
 
 /* --- SAHTE VERİ OLUŞTURUCU --- */
 const generateFakeData = async () => {
-  // Kodun kısalığı için burayı özet geçtim, önceki listeler hafızada.
-  alert("⚠️ Fake Data: Bu özellik için önceki tam listeyi kullanabilirsin.");
+  alert("⚠️ Fake Data: Kodda mevcut.");
 };
 
 // --- NAV ITEM COMPONENT ---
@@ -158,29 +152,22 @@ const NavItem = ({
 }) => (
   <button
     onClick={() => {
-      // Eğer 'post' ise SADECE modalı aç, sayfayı (activeTab) değiştirme!
       if (tab === "post") {
         requireAuth(() => {
           setEditingPost(null);
           setShowPostModal(true);
         });
-      }
-      // Eğer 'profile' ise hem yetki iste hem sayfayı değiştir
-      else if (tab === "profile") {
+      } else if (tab === "profile") {
         requireAuth(() => {
           setActiveTab("profile");
           window.scrollTo(0, 0);
         });
-      }
-      // Eğer 'chat' ise hem yetki iste hem sayfayı değiştir
-      else if (tab === "chat") {
+      } else if (tab === "chat") {
         requireAuth(() => {
           setActiveTab("chat");
           window.scrollTo(0, 0);
         });
-      }
-      // Diğerleri (Feed, AI Studio) için direkt geçiş
-      else {
+      } else {
         setActiveTab(tab);
         window.scrollTo(0, 0);
       }
@@ -197,32 +184,26 @@ const NavItem = ({
   </button>
 );
 
-// --- SPOTLIGHT BİLEŞENİ (KAYAN ŞERİT DÜZELTMESİ) ---
+// --- SPOTLIGHT BİLEŞENİ ---
 const Spotlight = ({ posts, onProfileClick }) => {
   const scrollRef = React.useRef(null);
   const [isPaused, setIsPaused] = useState(false);
-
-  // Sonsuz döngü için postları çoğaltıyoruz (Sadece görsel hile)
   const loopPosts = [...posts, ...posts, ...posts];
 
   useEffect(() => {
     const scrollContainer = scrollRef.current;
     if (!scrollContainer) return;
-
     let scrollAmount = 0;
-    const scrollStep = 1; // Hız (0.5 daha yavaş, 1 normal)
+    const scrollStep = 1;
 
     const scrollInterval = setInterval(() => {
       if (scrollContainer && !isPaused) {
         scrollContainer.scrollLeft += scrollStep;
-
-        // Eğer sona yaklaştıysa (yarısına geldiyse) başa sar (hissettirmeden)
         if (scrollContainer.scrollLeft >= scrollContainer.scrollWidth / 3) {
           scrollContainer.scrollLeft = 0;
         }
       }
     }, 20);
-
     return () => clearInterval(scrollInterval);
   }, [isPaused, posts]);
 
@@ -236,15 +217,13 @@ const Spotlight = ({ posts, onProfileClick }) => {
           Spotlight Creators
         </h3>
       </div>
-
-      {/* Carousel Container */}
       <div
         ref={scrollRef}
         className="flex gap-4 overflow-x-auto pb-4 px-4 no-scrollbar"
-        style={{ whiteSpace: "nowrap", overflowX: "hidden" }} // Scrollbarı gizle ama kayabilsin
+        style={{ whiteSpace: "nowrap", overflowX: "hidden" }}
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
-        onTouchStart={() => setIsPaused(true)} // Mobilde dokununca dursun
+        onTouchStart={() => setIsPaused(true)}
         onTouchEnd={() => setIsPaused(false)}
       >
         {loopPosts.map((post, index) => (
@@ -253,13 +232,10 @@ const Spotlight = ({ posts, onProfileClick }) => {
             onClick={() => onProfileClick(post)}
             className="min-w-[260px] inline-block bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-xl cursor-pointer hover:border-yellow-500/50 transition-all shadow-md relative overflow-hidden group"
           >
-            {/* Altın Parıltı */}
             <div className="absolute inset-0 bg-yellow-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
-
             <div className="absolute top-0 right-0 bg-yellow-500 text-black text-[10px] font-bold px-2 py-1 rounded-bl-lg z-10 flex items-center gap-1">
               <Star className="h-3 w-3 fill-black" /> FEATURED
             </div>
-
             <div className="flex items-center gap-3 mb-3 relative z-10">
               <img
                 src={post.image}
@@ -284,7 +260,214 @@ const Spotlight = ({ posts, onProfileClick }) => {
   );
 };
 
-// --- PROFIL GÖRÜNÜMÜ ---
+// --- CHAT LIST BİLEŞENİ (YENİ - Mesajları Listeler) ---
+const MessagesView = ({ user, setActiveChat }) => {
+  const [chats, setChats] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) return;
+    // İçinde kullanıcının ID'si geçen sohbetleri bul
+    const q = query(
+      collection(db, "chats"),
+      where("participants", "array-contains", user.uid),
+      orderBy("lastUpdated", "desc")
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const chatList = snapshot.docs.map((doc) => {
+        const data = doc.data();
+        // Karşı tarafın ID'sini bul
+        const otherUserId = data.participants.find((id) => id !== user.uid);
+        const otherUser = data.users[otherUserId] || {
+          name: "Unknown",
+          image: "",
+        };
+
+        return {
+          id: doc.id,
+          ownerId: otherUserId, // ChatModal için gerekli
+          name: otherUser.name,
+          image: otherUser.image,
+          lastMessage: data.lastMessage,
+          time: data.lastUpdated,
+        };
+      });
+      setChats(chatList);
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, [user]);
+
+  return (
+    <div className="max-w-4xl mx-auto px-4 py-4 pb-24">
+      <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+        Messages
+      </h2>
+      {loading ? (
+        <div className="text-center py-10">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-pink-500" />
+        </div>
+      ) : chats.length === 0 ? (
+        <div className="text-center py-20 border border-dashed border-gray-300 dark:border-gray-800 rounded-2xl">
+          <MessageCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-500 dark:text-gray-400">No messages yet.</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {chats.map((chat) => (
+            <div
+              key={chat.id}
+              onClick={() => setActiveChat(chat)}
+              className="flex items-center gap-4 p-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            >
+              <img
+                src={chat.image}
+                className="h-12 w-12 rounded-full object-cover border border-gray-300 dark:border-gray-700"
+              />
+              <div className="flex-1 min-w-0">
+                <div className="flex justify-between items-start">
+                  <h3 className="font-bold text-gray-900 dark:text-white">
+                    {chat.name}
+                  </h3>
+                  <span className="text-[10px] text-gray-400">
+                    {chat.time
+                      ?.toDate()
+                      .toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                  {chat.lastMessage}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// --- CHAT MODAL (GÜNCELLENDİ - Veritabanına Kayıt Yapar) ---
+const ChatModal = ({ activeChat, setActiveChat, user }) => {
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState("");
+  const chatId = [user.uid, activeChat.ownerId].sort().join("_");
+  const messagesEndRef = useRef(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    if (!chatId) return;
+    const q = query(
+      collection(db, "chats", chatId, "messages"),
+      orderBy("createdAt", "asc")
+    );
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      setMessages(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+      setTimeout(scrollToBottom, 100);
+    });
+    return () => unsubscribe();
+  }, [chatId]);
+
+  const handleSendMessage = async (e) => {
+    e.preventDefault();
+    if (!newMessage.trim()) return;
+
+    const messageText = newMessage;
+    setNewMessage(""); // UI'ı hemen temizle
+
+    // 1. Mesajı Alt Koleksiyona Ekle
+    await addDoc(collection(db, "chats", chatId, "messages"), {
+      text: messageText,
+      senderId: user.uid,
+      createdAt: serverTimestamp(),
+    });
+
+    // 2. Sohbet Özetini Güncelle (Ana Liste İçin)
+    const chatRef = doc(db, "chats", chatId);
+    await setDoc(
+      chatRef,
+      {
+        participants: [user.uid, activeChat.ownerId],
+        users: {
+          [user.uid]: { name: user.name, image: user.image },
+          [activeChat.ownerId]: {
+            name: activeChat.name,
+            image: activeChat.image,
+          },
+        },
+        lastMessage: messageText,
+        lastUpdated: serverTimestamp(),
+      },
+      { merge: true }
+    );
+  };
+
+  return (
+    <div className="fixed bottom-0 right-0 md:right-4 w-full md:w-80 h-[100dvh] md:h-[500px] bg-white dark:bg-gray-900 border-t md:border border-gray-200 dark:border-gray-800 md:rounded-t-2xl z-[100] flex flex-col shadow-2xl">
+      <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex justify-between bg-white dark:bg-gray-900 md:rounded-t-2xl items-center">
+        <div className="flex items-center gap-3">
+          <img
+            src={activeChat.image}
+            className="h-8 w-8 rounded-full object-cover"
+          />
+          <span className="text-gray-900 dark:text-white font-bold truncate">
+            {activeChat.name}
+          </span>
+        </div>
+        <button
+          onClick={() => setActiveChat(null)}
+          className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 bg-gray-100 dark:bg-gray-800 p-2 rounded-full"
+        >
+          <X className="h-5 w-5" />
+        </button>
+      </div>
+
+      <div className="flex-1 bg-gray-50 dark:bg-gray-950 p-4 overflow-y-auto flex flex-col gap-3">
+        {messages.map((msg) => (
+          <div
+            key={msg.id}
+            className={`p-3 rounded-2xl text-sm max-w-[80%] ${
+              msg.senderId === user.uid
+                ? "self-end bg-pink-600 text-white rounded-br-none"
+                : "self-start bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-200 border border-gray-200 dark:border-gray-700 rounded-bl-none shadow-sm"
+            }`}
+          >
+            {msg.text}
+          </div>
+        ))}
+        <div ref={messagesEndRef} />
+      </div>
+
+      <form
+        onSubmit={handleSendMessage}
+        className="p-3 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex gap-2 safe-area-bottom"
+      >
+        <input
+          value={newMessage}
+          onChange={(e) => setNewMessage(e.target.value)}
+          className="w-full bg-gray-100 dark:bg-gray-950 rounded-full px-4 py-3 text-gray-900 dark:text-white outline-none border border-gray-200 dark:border-gray-800 placeholder:text-gray-400 dark:placeholder:text-gray-600"
+          placeholder="Type a message..."
+          autoFocus
+        />
+        <button
+          type="submit"
+          className="bg-pink-600 text-white p-3 rounded-full hover:bg-pink-700 transition-colors"
+        >
+          <Send className="h-5 w-5" />
+        </button>
+      </form>
+    </div>
+  );
+};
+
+// --- PROFİL SAYFASI BİLEŞENİ ---
 const ProfileView = ({ user, setShowOnboarding, handleLogout, posts }) => {
   const myPosts = posts.filter((p) => p.ownerId === user.uid);
 
@@ -375,98 +558,11 @@ const ProfileView = ({ user, setShowOnboarding, handleLogout, posts }) => {
   );
 };
 
-// --- MESAJLAR SAYFASI ---
-const MessagesView = () => (
-  <div className="max-w-4xl mx-auto px-4 py-8 pb-24 text-center">
-    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-12 shadow-lg">
-      <MessageCircle className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-      <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-        No Messages Yet
-      </h2>
-      <p className="text-gray-500 dark:text-gray-400">
-        Start connecting with creators!
-      </p>
-    </div>
-  </div>
-);
-
-// --- AI STUDIO ---
-const AIStudio = () => (
-  <div className="p-4 text-center text-gray-500 flex items-center justify-center h-[50vh]">
-    AI Studio Coming Soon...
-  </div>
-);
-
-// --- CHAT MODAL ---
-const ChatModal = ({ activeChat, setActiveChat, user }) => {
-  const [messages, setMessages] = useState([]);
-  const [newMessage, setNewMessage] = useState("");
-  const chatId = [user.uid, activeChat.ownerId].sort().join("_");
-
-  useEffect(() => {
-    if (!chatId) return;
-    const q = query(
-      collection(db, "chats", chatId, "messages"),
-      orderBy("createdAt", "asc")
-    );
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      setMessages(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
-    });
-    return () => unsubscribe();
-  }, [chatId]);
-
-  const handleSendMessage = async (e) => {
-    e.preventDefault();
-    if (!newMessage.trim()) return;
-    await addDoc(collection(db, "chats", chatId, "messages"), {
-      text: newMessage,
-      senderId: user.uid,
-      createdAt: serverTimestamp(),
-    });
-    setNewMessage("");
-  };
-
+// --- AI STUDIO BİLEŞENİ ---
+const AIStudio = ({ user, requireAuth }) => {
   return (
-    <div className="fixed bottom-0 right-0 md:right-4 w-full md:w-80 h-[400px] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 md:rounded-t-2xl z-[100] flex flex-col shadow-2xl">
-      <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex justify-between bg-gray-50 dark:bg-gray-950 rounded-t-2xl">
-        <span className="text-gray-900 dark:text-white font-bold truncate">
-          {activeChat.name}
-        </span>
-        <button
-          onClick={() => setActiveChat(null)}
-          className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-        >
-          <X />
-        </button>
-      </div>
-      <div className="flex-1 bg-gray-50 dark:bg-gray-900/90 p-4 overflow-y-auto flex flex-col gap-2">
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`p-2 rounded-lg text-sm max-w-[80%] ${
-              msg.senderId === user.uid
-                ? "self-end bg-pink-600 text-white"
-                : "self-start bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-gray-200"
-            }`}
-          >
-            {msg.text}
-          </div>
-        ))}
-      </div>
-      <form
-        onSubmit={handleSendMessage}
-        className="p-3 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex gap-2"
-      >
-        <input
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          className="w-full bg-gray-100 dark:bg-gray-950 rounded-full px-4 py-2 text-gray-900 dark:text-white outline-none border border-gray-200 dark:border-gray-800 placeholder:text-gray-400 dark:placeholder:text-gray-600"
-          placeholder="Message..."
-        />
-        <button type="submit" className="text-pink-500 hover:text-pink-600">
-          <Send className="h-5 w-5" />
-        </button>
-      </form>
+    <div className="p-4 text-center text-gray-500 flex items-center justify-center h-[50vh]">
+      AI Studio Coming Soon...
     </div>
   );
 };
@@ -486,6 +582,7 @@ export default function App() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showPostModal, setShowPostModal] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState(null);
   const [activeChat, setActiveChat] = useState(null);
   const [editingPost, setEditingPost] = useState(null);
@@ -554,11 +651,14 @@ export default function App() {
 
       if (snapshot.docs.length > 0) {
         setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
-        if (isLoadMore) setPosts((prev) => [...prev, ...newPosts]);
-        else setPosts(newPosts);
+        if (isLoadMore) {
+          setPosts((prev) => [...prev, ...newPosts]);
+        } else {
+          setPosts(newPosts);
+        }
       }
     } catch (error) {
-      console.error(error);
+      console.error("Error fetching posts:", error);
     }
     setLoadingPosts(false);
   };
@@ -579,7 +679,7 @@ export default function App() {
         setShowOnboarding(true);
       }
     } catch (error) {
-      alert(error.message);
+      alert("Hata: " + error.message);
     }
   };
 
@@ -613,33 +713,38 @@ export default function App() {
   const handleLogout = async () => {
     if (window.confirm("Çıkış yapmak istiyor musun?")) {
       await signOut(auth);
-      setUser(null);
-      setActiveTab("feed");
+      setActiveChat(null);
     }
   };
 
   const handlePostAd = async (formData) => {
     if (!user) return;
-    const postData = {
-      ownerId: user.id,
-      name: user.name,
-      handle:
-        "@" + (user.name ? user.name.replace(/\s/g, "").toLowerCase() : "user"),
-      image: user.image,
-      verified: user.verified,
-      boosted: formData.isBoosted,
-      urgent: formData.isUrgent,
-      type: formData.type,
-      location: formData.location,
-      desc: formData.desc,
-      tags: ["New", formData.type],
-      createdAt: Date.now(),
-      followers: "New",
-      socials: user.socials || {},
-    };
-    await addDoc(collection(db, "posts"), postData);
-    setShowPostModal(false);
-    fetchPosts();
+    try {
+      const postData = {
+        ownerId: user.id,
+        name: user.name,
+        handle:
+          "@" +
+          (user.name ? user.name.replace(/\s/g, "").toLowerCase() : "user"),
+        image: user.image,
+        verified: user.verified,
+        boosted: formData.isBoosted,
+        urgent: formData.isUrgent,
+        type: formData.type,
+        location: formData.location,
+        desc: formData.desc,
+        tags: ["New", formData.type],
+        createdAt: Date.now(),
+        followers: "New",
+        socials: user.socials || {},
+      };
+      await addDoc(collection(db, "posts"), postData);
+      setShowPostModal(false);
+      setEditingPost(null);
+      fetchPosts();
+    } catch (error) {
+      alert("İlan gönderilemedi.");
+    }
   };
 
   const handleDelete = async (postId) => {
@@ -730,7 +835,7 @@ export default function App() {
         </div>
       </nav>
 
-      {/* --- İÇERİK YÖNETİMİ --- */}
+      {/* İÇERİK YÖNETİMİ */}
 
       {/* 1. FEED SAYFASI */}
       {activeTab === "feed" && (
@@ -748,7 +853,6 @@ export default function App() {
                 />
               </div>
 
-              {/* SPOTLIGHT (KAYAN ŞERİT) */}
               <Spotlight
                 posts={boostedPosts}
                 onProfileClick={(post) =>
@@ -784,13 +888,12 @@ export default function App() {
             </div>
           </div>
 
-          <main className="max-w-6xl mx-auto px-4 py-6">
+          <main className="max-w-6xl mx-auto px-4 py-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredPosts.map((post) => (
                 <div
                   key={post.id}
                   onClick={() => requireAuth(() => setSelectedProfile(post))}
-                  // ÖNE ÇIKAN İLAN STİLİ (ALTIN ÇERÇEVE)
                   className={`relative bg-white dark:bg-gray-900 rounded-2xl p-4 border transition-all active:scale-95 duration-200 cursor-pointer flex flex-col group ${
                     post.boosted
                       ? "border-yellow-500/70 shadow-[0_0_15px_rgba(234,179,8,0.15)] bg-gradient-to-b from-yellow-50/50 to-white dark:from-yellow-900/10 dark:to-gray-900"
@@ -857,7 +960,6 @@ export default function App() {
               ))}
             </div>
 
-            {/* DAHA FAZLA YÜKLE */}
             <div className="mt-8 text-center">
               <button
                 onClick={() => fetchPosts(true)}
@@ -883,10 +985,12 @@ export default function App() {
       {/* 2. AI STUDIO */}
       {activeTab === "ai-studio" && <AIStudio />}
 
-      {/* 3. CHAT SAYFASI (DÜZELTİLDİ) */}
-      {activeTab === "chat" && <MessagesView />}
+      {/* 3. CHAT SAYFASI (GÜNCELLENDİ - Mesajları Listeliyor) */}
+      {activeTab === "chat" && (
+        <MessagesView user={user} setActiveChat={setActiveChat} />
+      )}
 
-      {/* 4. PROFIL SAYFASI (DÜZELTİLDİ) */}
+      {/* 4. PROFIL SAYFASI */}
       {activeTab === "profile" && user && (
         <ProfileView
           user={user}
@@ -1075,7 +1179,7 @@ export default function App() {
   );
 }
 
-// --- YARDIMCI BİLEŞENLER ---
+// --- YARDIMCI BİLEŞENLER (Modallar vb. aynı kalıyor, sadece stilleri koruduk) ---
 function AuthModal({ mode, setMode, onClose, onSubmit }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -1162,6 +1266,8 @@ function OnboardingModal({ onComplete, initialData }) {
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
           {initialData ? "Edit Profile" : "Setup Profile"}
         </h2>
+
+        {/* FOTOĞRAF YÜKLEME ALANI */}
         <div className="relative w-24 h-24 mx-auto mb-4 group cursor-pointer">
           <img
             src={data.image}
@@ -1181,6 +1287,7 @@ function OnboardingModal({ onComplete, initialData }) {
             onChange={handleImageUpload}
           />
         </div>
+
         <div className="space-y-4 text-left">
           <div>
             <label className="text-xs font-bold text-gray-500 uppercase">
