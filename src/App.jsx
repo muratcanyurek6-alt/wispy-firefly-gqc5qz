@@ -137,7 +137,7 @@ const generateFakeData = async () => {
   alert("⚠️ Fake Data feature exists in code but button is hidden.");
 };
 
-// --- NAV ITEM COMPONENT (FIX: Bildirim Badge Desteği Eklendi) ---
+// --- NAV ITEM COMPONENT (GÜÇLENDİRİLMİŞ BADGE) ---
 const NavItem = ({
   tab,
   icon: Icon,
@@ -148,7 +148,7 @@ const NavItem = ({
   setEditingPost,
   setShowPostModal,
   mobileOnly,
-  badge, // YENİ PROP
+  badge, // Bu özellik çok önemli
 }) => (
   <button
     onClick={() => {
@@ -167,7 +167,7 @@ const NavItem = ({
         window.scrollTo(0, 0);
       }
     }}
-    className={`flex flex-col items-center justify-center px-3 py-1 transition-colors 
+    className={`relative flex flex-col items-center justify-center px-3 py-1 transition-colors 
       ${mobileOnly ? "md:hidden w-full" : ""} 
       ${
         activeTab === tab
@@ -175,16 +175,17 @@ const NavItem = ({
           : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
       }`}
   >
-    <div className="relative">
+    <div className="relative inline-block">
       <Icon
         className={`h-6 w-6 ${activeTab === tab ? "fill-current" : ""}`}
         strokeWidth={activeTab === tab ? 2.5 : 2}
       />
-      {/* KIRMIZI BİLDİRİM NOKTASI */}
+      {/* GÜÇLENDİRİLMİŞ KIRMIZI NOKTA */}
       {badge && (
-        <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white dark:border-gray-900 animate-pulse"></span>
+        <span className="absolute -top-1 -right-1 block h-3 w-3 rounded-full bg-red-600 ring-2 ring-white dark:ring-gray-900 animate-pulse z-50"></span>
       )}
     </div>
+
     <span
       className={`text-[10px] mt-0.5 font-medium ${
         mobileOnly ? "" : "md:hidden"
@@ -293,7 +294,7 @@ const ChatList = ({ user, activeChat, setActiveChat }) => {
           image: "https://via.placeholder.com/150",
         };
 
-        // Okunmamış mesaj kontrolü
+        // Okunmamış Mesaj Kontrolü (Listedeki Kırmızı Nokta)
         const isUnread = data.unreadBy?.includes(user.id);
 
         return {
@@ -303,7 +304,7 @@ const ChatList = ({ user, activeChat, setActiveChat }) => {
           image: otherUser.image || "https://via.placeholder.com/150",
           lastMessage: data.lastMessage,
           time: data.lastUpdated,
-          isUnread, // Yeni field
+          isUnread, // Yeni veri
         };
       });
       setChats(chatList);
@@ -373,7 +374,7 @@ const ChatList = ({ user, activeChat, setActiveChat }) => {
                 {chat.lastMessage}
               </p>
               {chat.isUnread && (
-                <div className="w-2 h-2 bg-pink-500 rounded-full ml-2"></div>
+                <div className="w-2.5 h-2.5 bg-pink-500 rounded-full ml-2 flex-shrink-0"></div>
               )}
             </div>
           </div>
@@ -407,17 +408,22 @@ const ChatWindow = ({ activeChat, setActiveChat, user }) => {
     return () => unsubscribe();
   }, [chatId]);
 
-  // Okundu İşaretleme
+  // Mesajı okundu olarak işaretle (Chat açılınca)
   useEffect(() => {
     if (!chatId || !user) return;
     const markAsRead = async () => {
-      const chatRef = doc(db, "chats", chatId);
-      await updateDoc(chatRef, {
-        unreadBy: arrayRemove(user.id),
-      });
+      try {
+        const chatRef = doc(db, "chats", chatId);
+        await updateDoc(chatRef, {
+          unreadBy: arrayRemove(user.id), // Kendimi okunmamışlar listesinden sil
+        });
+      } catch (err) {
+        // Sessiz hata (önemli değil)
+        console.log("Read receipt error", err);
+      }
     };
     markAsRead();
-  }, [chatId, user]);
+  }, [chatId, user, messages]); // Mesajlar değişince de tetikle
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -446,7 +452,7 @@ const ChatWindow = ({ activeChat, setActiveChat, user }) => {
         },
         lastMessage: messageText,
         lastUpdated: serverTimestamp(),
-        unreadBy: arrayUnion(activeChat.ownerId), // Karşı tarafın ID'sini ekle
+        unreadBy: arrayUnion(activeChat.ownerId), // Karşı tarafı "okumadı" olarak işaretle
       },
       { merge: true }
     );
@@ -454,6 +460,7 @@ const ChatWindow = ({ activeChat, setActiveChat, user }) => {
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-gray-900 w-full">
+      {/* Header */}
       <div className="p-3 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center bg-white dark:bg-gray-900 z-10 shadow-sm sticky top-0 safe-area-top">
         <div className="flex items-center gap-3">
           <button
@@ -481,6 +488,7 @@ const ChatWindow = ({ activeChat, setActiveChat, user }) => {
         </button>
       </div>
 
+      {/* Mesaj Alanı */}
       <div className="flex-1 bg-gray-50 dark:bg-black/50 p-4 overflow-y-auto flex flex-col gap-3">
         {messages.map((msg) => (
           <div
@@ -497,6 +505,7 @@ const ChatWindow = ({ activeChat, setActiveChat, user }) => {
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Input Alanı */}
       <form
         onSubmit={handleSendMessage}
         className="p-3 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex gap-2 safe-area-bottom sticky bottom-0"
@@ -976,7 +985,7 @@ function PostModal({ onClose, onSubmit }) {
   );
 }
 
-// --- 5. ANA UYGULAMA ---
+// --- 5. MAIN APP ---
 export default function App() {
   const [activeTab, setActiveTab] = useState("feed");
   const [posts, setPosts] = useState([]);
@@ -1006,6 +1015,7 @@ export default function App() {
     }
   }, [darkMode]);
 
+  // GLOBAL USER AUTH LISTENER
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
@@ -1037,7 +1047,7 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  // GLOBAL BİLDİRİM DİNLEYİCİ
+  // GLOBAL NOTIFICATION LISTENER (UNREAD MESSAGES)
   useEffect(() => {
     if (!user) {
       setUnreadCount(0);
@@ -1051,6 +1061,7 @@ export default function App() {
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setUnreadCount(snapshot.size);
+      console.log("Unread Count:", snapshot.size); // Debug için
     });
 
     return () => unsubscribe();
@@ -1265,7 +1276,7 @@ export default function App() {
               activeTab={activeTab}
               setActiveTab={setActiveTab}
               requireAuth={requireAuth}
-              badge={unreadCount > 0} // DESKTOP BADGE
+              badge={unreadCount > 0} // MASAÜSTÜ BADGE
             />
             <NavItem
               tab="ai-studio"
