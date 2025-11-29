@@ -52,9 +52,11 @@ import {
   Wand2,
   User,
   TrendingUp,
+  ArrowLeft, // Geri butonu için
+  MoreVertical, // Seçenekler için
 } from "lucide-react";
 
-// --- TASARIM KURTARICI (CDN) ---
+// --- TASARIM KURTARICI ---
 const TailwindCDN = () => (
   <>
     <link
@@ -65,6 +67,10 @@ const TailwindCDN = () => (
       .no-scrollbar::-webkit-scrollbar { display: none; }
       .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom); }
+      /* Mobil için tam ekran chat yüksekliği */
+      .h-chat-mobile { height: calc(100vh - 64px - 60px); } 
+      /* Masaüstü için tam ekran chat yüksekliği */
+      .h-chat-desktop { height: calc(100vh - 80px); }
     `}</style>
   </>
 );
@@ -120,7 +126,7 @@ const uploadImageToCloudinary = async (file) => {
     return data.secure_url;
   } catch (error) {
     console.error("Resim yükleme hatası:", error);
-    alert("Resim yüklenemedi. Ayarları kontrol et.");
+    alert("Resim yüklenemedi.");
     return null;
   }
 };
@@ -245,15 +251,13 @@ const Spotlight = ({ posts, onProfileClick }) => {
   );
 };
 
-// --- MESSAGES VIEW ---
-const MessagesView = ({ user, setActiveChat }) => {
+// --- CHAT LİSTESİ BİLEŞENİ (Sol Taraf) ---
+const ChatList = ({ user, activeChat, setActiveChat }) => {
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) return;
-
-    // DÜZELTME: user.uid YERİNE user.id KULLANILDI
     const q = query(
       collection(db, "chats"),
       where("participants", "array-contains", user.id),
@@ -263,7 +267,6 @@ const MessagesView = ({ user, setActiveChat }) => {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const chatList = snapshot.docs.map((doc) => {
         const data = doc.data();
-        // DÜZELTME: user.id KULLANILDI
         const otherUserId = data.participants.find((id) => id !== user.id);
         const otherUser = data.users?.[otherUserId] || {
           name: "Unknown",
@@ -285,70 +288,73 @@ const MessagesView = ({ user, setActiveChat }) => {
     return () => unsubscribe();
   }, [user]);
 
+  if (loading)
+    return (
+      <div className="p-4 text-center">
+        <Loader2 className="h-6 w-6 animate-spin mx-auto text-pink-500" />
+      </div>
+    );
+
+  if (chats.length === 0) {
+    return (
+      <div className="p-8 text-center text-gray-500">
+        <MessageCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
+        <p>No messages yet.</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="max-w-4xl mx-auto px-4 py-4 pb-24">
-      <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-        Messages
-      </h2>
-      {loading ? (
-        <div className="text-center py-10">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto text-pink-500" />
-        </div>
-      ) : chats.length === 0 ? (
-        <div className="text-center py-20 border border-dashed border-gray-300 dark:border-gray-800 rounded-2xl">
-          <MessageCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-500 dark:text-gray-400">No messages yet.</p>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {chats.map((chat) => (
-            <div
-              key={chat.id}
-              onClick={() => setActiveChat(chat)}
-              className="flex items-center gap-4 p-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-            >
-              <img
-                src={chat.image}
-                className="h-12 w-12 rounded-full object-cover border border-gray-300 dark:border-gray-700"
-              />
-              <div className="flex-1 min-w-0">
-                <div className="flex justify-between items-start">
-                  <h3 className="font-bold text-gray-900 dark:text-white">
-                    {chat.name}
-                  </h3>
-                  <span className="text-[10px] text-gray-400">
-                    {chat.time?.toDate().toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </span>
-                </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                  {chat.lastMessage}
-                </p>
-              </div>
+    <div className="flex-1 overflow-y-auto">
+      {chats.map((chat) => (
+        <div
+          key={chat.id}
+          onClick={() => setActiveChat(chat)}
+          className={`flex items-center gap-3 p-4 cursor-pointer transition-colors border-b border-gray-100 dark:border-gray-800 ${
+            activeChat?.id === chat.id
+              ? "bg-pink-50 dark:bg-pink-900/10 border-l-4 border-l-pink-500"
+              : "hover:bg-gray-50 dark:hover:bg-gray-800"
+          }`}
+        >
+          <img
+            src={chat.image}
+            className="h-12 w-12 rounded-full object-cover border border-gray-200 dark:border-gray-700"
+          />
+          <div className="flex-1 min-w-0">
+            <div className="flex justify-between items-baseline mb-1">
+              <h3
+                className={`font-bold truncate ${
+                  activeChat?.id === chat.id
+                    ? "text-pink-600 dark:text-pink-400"
+                    : "text-gray-900 dark:text-white"
+                }`}
+              >
+                {chat.name}
+              </h3>
+              <span className="text-[10px] text-gray-400 whitespace-nowrap ml-2">
+                {chat.time?.toDate().toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </span>
             </div>
-          ))}
+            <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+              {chat.lastMessage}
+            </p>
+          </div>
         </div>
-      )}
+      ))}
     </div>
   );
 };
 
-// --- CHAT MODAL ---
-const ChatModal = ({ activeChat, setActiveChat, user }) => {
+// --- CHAT PENCERESİ BİLEŞENİ (Sağ Taraf) ---
+const ChatWindow = ({ activeChat, setActiveChat, user }) => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
-
-  if (!activeChat || !activeChat.ownerId) return null;
-
-  // DÜZELTME: user.id KULLANILDI
-  const chatId = [user.id, activeChat.ownerId].sort().join("_");
   const messagesEndRef = useRef(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  const chatId = [user.id, activeChat.ownerId].sort().join("_");
 
   useEffect(() => {
     if (!chatId) return;
@@ -358,7 +364,10 @@ const ChatModal = ({ activeChat, setActiveChat, user }) => {
     );
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setMessages(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
-      setTimeout(scrollToBottom, 100);
+      setTimeout(
+        () => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }),
+        100
+      );
     });
     return () => unsubscribe();
   }, [chatId]);
@@ -370,14 +379,12 @@ const ChatModal = ({ activeChat, setActiveChat, user }) => {
     const messageText = newMessage;
     setNewMessage("");
 
-    // 1. Mesajı Ekle - DÜZELTME: user.id
     await addDoc(collection(db, "chats", chatId, "messages"), {
       text: messageText,
       senderId: user.id,
       createdAt: serverTimestamp(),
     });
 
-    // 2. Sohbeti Güncelle - DÜZELTME: user.id
     const chatRef = doc(db, "chats", chatId);
     await setDoc(
       chatRef,
@@ -399,36 +406,45 @@ const ChatModal = ({ activeChat, setActiveChat, user }) => {
   };
 
   return (
-    <div className="fixed bottom-0 right-0 md:right-4 w-full md:w-80 h-[100dvh] md:h-[500px] bg-white dark:bg-gray-900 border-t md:border border-gray-200 dark:border-gray-800 md:rounded-t-2xl z-[100] flex flex-col shadow-2xl">
+    <div className="flex flex-col h-full bg-white dark:bg-gray-900">
       {/* Header */}
-      <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex justify-between bg-white dark:bg-gray-900 md:rounded-t-2xl items-center safe-area-top">
+      <div className="p-3 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center bg-white dark:bg-gray-900 z-10 shadow-sm">
         <div className="flex items-center gap-3">
+          {/* Mobil için Geri Butonu */}
+          <button
+            onClick={() => setActiveChat(null)}
+            className="md:hidden text-gray-500 hover:text-gray-900 dark:hover:text-white p-1"
+          >
+            <ArrowLeft className="h-6 w-6" />
+          </button>
+
           <img
             src={activeChat.image}
-            className="h-8 w-8 rounded-full object-cover"
+            className="h-10 w-10 rounded-full object-cover border border-gray-200 dark:border-gray-700"
           />
-          <span className="text-gray-900 dark:text-white font-bold truncate">
-            {activeChat.name}
-          </span>
+          <div>
+            <h3 className="font-bold text-gray-900 dark:text-white text-sm md:text-base">
+              {activeChat.name}
+            </h3>
+            <span className="text-xs text-green-500 flex items-center gap-1">
+              ● Online
+            </span>
+          </div>
         </div>
-        <button
-          onClick={() => setActiveChat(null)}
-          className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 bg-gray-100 dark:bg-gray-800 p-2 rounded-full"
-        >
-          <X className="h-5 w-5" />
+        <button className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+          <MoreVertical className="h-5 w-5" />
         </button>
       </div>
 
-      {/* Mesajlar */}
-      <div className="flex-1 bg-gray-50 dark:bg-gray-950 p-4 overflow-y-auto flex flex-col gap-3">
+      {/* Mesaj Alanı */}
+      <div className="flex-1 bg-gray-50 dark:bg-black/50 p-4 overflow-y-auto flex flex-col gap-3">
         {messages.map((msg) => (
           <div
             key={msg.id}
-            className={`p-3 rounded-2xl text-sm max-w-[80%] ${
-              // DÜZELTME: user.id
+            className={`max-w-[75%] px-4 py-2 rounded-2xl text-sm shadow-sm ${
               msg.senderId === user.id
                 ? "self-end bg-pink-600 text-white rounded-br-none"
-                : "self-start bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-200 border border-gray-200 dark:border-gray-700 rounded-bl-none shadow-sm"
+                : "self-start bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-200 border border-gray-200 dark:border-gray-700 rounded-bl-none"
             }`}
           >
             {msg.text}
@@ -437,7 +453,7 @@ const ChatModal = ({ activeChat, setActiveChat, user }) => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
+      {/* Input Alanı */}
       <form
         onSubmit={handleSendMessage}
         className="p-3 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex gap-2 safe-area-bottom"
@@ -445,24 +461,70 @@ const ChatModal = ({ activeChat, setActiveChat, user }) => {
         <input
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
-          className="w-full bg-gray-100 dark:bg-gray-950 rounded-full px-4 py-3 text-gray-900 dark:text-white outline-none border border-gray-200 dark:border-gray-800 placeholder:text-gray-400 dark:placeholder:text-gray-600 focus:border-pink-500 transition-colors"
+          className="flex-1 bg-gray-100 dark:bg-gray-800 rounded-full px-5 py-3 text-gray-900 dark:text-white outline-none border border-transparent focus:border-pink-500 focus:bg-white dark:focus:bg-black transition-all"
           placeholder="Type a message..."
           autoFocus
         />
         <button
           type="submit"
-          className="bg-pink-600 text-white p-3 rounded-full hover:bg-pink-700 transition-colors"
+          className="bg-pink-600 text-white p-3 rounded-full hover:bg-pink-700 transition-colors shadow-lg shadow-pink-600/20 active:scale-95 transform"
         >
-          <Send className="h-5 w-5" />
+          <Send className="h-5 w-5 ml-0.5" />
         </button>
       </form>
     </div>
   );
 };
 
+// --- YENİ MESAJLAŞMA SAYFASI (Split View) ---
+const ChatLayout = ({ user, activeChat, setActiveChat }) => {
+  return (
+    <div className="flex h-chat-mobile md:h-chat-desktop max-w-6xl mx-auto w-full bg-white dark:bg-gray-900 md:border border-gray-200 dark:border-gray-800 md:rounded-2xl md:shadow-2xl overflow-hidden md:mt-4">
+      {/* SOL TARAF: LİSTE (Mobilde chat açıksa gizlenir) */}
+      <div
+        className={`w-full md:w-[350px] border-r border-gray-200 dark:border-gray-800 flex flex-col bg-white dark:bg-gray-900 ${
+          activeChat ? "hidden md:flex" : "flex"
+        }`}
+      >
+        <div className="p-4 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+            Messages
+          </h2>
+        </div>
+        <ChatList
+          user={user}
+          activeChat={activeChat}
+          setActiveChat={setActiveChat}
+        />
+      </div>
+
+      {/* SAĞ TARAF: CHAT PENCERESİ (Mobilde sadece chat açıksa görünür) */}
+      <div
+        className={`flex-1 bg-gray-50 dark:bg-black/20 ${
+          !activeChat
+            ? "hidden md:flex items-center justify-center"
+            : "flex flex-col"
+        }`}
+      >
+        {activeChat ? (
+          <ChatWindow
+            activeChat={activeChat}
+            setActiveChat={setActiveChat}
+            user={user}
+          />
+        ) : (
+          <div className="text-center text-gray-400 hidden md:block">
+            <MessageCircle className="h-16 w-16 mx-auto mb-4 opacity-20" />
+            <p className="text-lg">Select a conversation to start chatting</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 // --- PROFILE VIEW ---
 const ProfileView = ({ user, setShowOnboarding, handleLogout, posts }) => {
-  // DÜZELTME: user.id
   const myPosts = posts.filter((p) => p.ownerId === user.id);
 
   return (
@@ -984,7 +1046,7 @@ export default function App() {
                     <button className="bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-white py-1.5 rounded-lg text-xs font-bold transition-colors">
                       View Profile
                     </button>
-                    {/* DÜZELTME: user.id */}
+                    {/* DÜZELTME: user.id ve user.name */}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -1020,6 +1082,7 @@ export default function App() {
                           );
 
                           setActiveChat(chatData);
+                          setActiveTab("chat"); // Chate yönlendir
                         });
                       }}
                       className="bg-pink-600 hover:bg-pink-700 text-white py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-2 shadow-lg shadow-pink-600/20"
@@ -1054,9 +1117,16 @@ export default function App() {
       )}
 
       {activeTab === "ai-studio" && <AIStudio />}
+
+      {/* 3. CHAT SAYFASI (YENİ TASARIM) */}
       {activeTab === "chat" && (
-        <MessagesView user={user} setActiveChat={setActiveChat} />
+        <ChatLayout
+          user={user}
+          activeChat={activeChat}
+          setActiveChat={setActiveChat}
+        />
       )}
+
       {activeTab === "profile" && user && (
         <ProfileView
           user={user}
@@ -1232,6 +1302,7 @@ export default function App() {
                   );
 
                   setActiveChat(chatData);
+                  setActiveTab("chat");
                 }}
                 className="w-full bg-pink-600 text-white py-3 rounded-xl font-bold shadow-lg"
               >
@@ -1240,14 +1311,6 @@ export default function App() {
             </div>
           </div>
         </div>
-      )}
-
-      {activeChat && (
-        <ChatModal
-          activeChat={activeChat}
-          setActiveChat={setActiveChat}
-          user={user}
-        />
       )}
 
       {showPremiumModal && (
