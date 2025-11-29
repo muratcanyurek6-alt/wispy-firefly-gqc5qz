@@ -15,6 +15,7 @@ import {
   getDocs,
   getDoc,
   setDoc,
+  updateDoc, // EKLENDİ
   query,
   orderBy,
   onSnapshot,
@@ -24,6 +25,8 @@ import {
   startAfter,
   serverTimestamp,
   where,
+  arrayUnion, // EKLENDİ: Bildirim için gerekli
+  arrayRemove, // EKLENDİ: Bildirimi silmek için gerekli
 } from "firebase/firestore";
 import {
   MapPin,
@@ -56,7 +59,7 @@ import {
   MoreVertical,
 } from "lucide-react";
 
-// --- 1. AYARLAR VE STİLLER ---
+// --- STYLE & CDN ---
 const TailwindCDN = () => (
   <>
     <link
@@ -73,11 +76,13 @@ const TailwindCDN = () => (
   </>
 );
 
+/* --- CLOUDINARY CONFIG --- */
 const CLOUDINARY_CONFIG = {
   cloudName: "dqoh1mjjk",
   uploadPreset: "yxdnini8",
 };
 
+/* --- FIREBASE CONFIG --- */
 const firebaseConfig = {
   apiKey: "AIzaSyAQmTeBxY21B0y51uJVfGCirJIi4xuSeWE",
   authDomain: "linkup-app-6318c.firebaseapp.com",
@@ -90,11 +95,12 @@ const firebaseConfig = {
 
 const apiKey = ""; // Gemini API Key
 
-// --- 2. SİSTEM BAŞLATMA ---
+/* --- INITIALIZE SYSTEM --- */
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+/* --- CATEGORIES --- */
 const CATEGORIES = [
   { id: "COLLAB", label: "Collab 🎥", color: "purple" },
   { id: "S4S", label: "S4S / Promo 🔄", color: "pink" },
@@ -104,7 +110,7 @@ const CATEGORIES = [
   { id: "SERVICE", label: "Services 📸", color: "orange" },
 ];
 
-// --- 3. YARDIMCI FONKSİYONLAR ---
+/* --- IMAGE UPLOAD FUNCTION --- */
 const uploadImageToCloudinary = async (file) => {
   if (!file) return null;
   const formData = new FormData();
@@ -120,18 +126,18 @@ const uploadImageToCloudinary = async (file) => {
     if (data.error) throw new Error(data.error.message);
     return data.secure_url;
   } catch (error) {
-    console.error("Resim hatası:", error);
+    console.error("Image upload error:", error);
     alert("Image upload failed.");
     return null;
   }
 };
 
+/* --- FAKE DATA GENERATOR --- */
 const generateFakeData = async () => {
-  alert("⚠️ Fake Data feature exists but hidden.");
+  alert("⚠️ Fake Data feature exists in code but button is hidden.");
 };
 
-// --- 4. ALT BİLEŞENLER (SUB-COMPONENTS) ---
-
+// --- NAV ITEM COMPONENT (BADGE DESTEĞİ EKLENDİ) ---
 const NavItem = ({
   tab,
   icon: Icon,
@@ -142,6 +148,7 @@ const NavItem = ({
   setEditingPost,
   setShowPostModal,
   mobileOnly,
+  badge, // Yeni Prop: Bildirim Sayısı veya Durumu
 }) => (
   <button
     onClick={() => {
@@ -160,7 +167,7 @@ const NavItem = ({
         window.scrollTo(0, 0);
       }
     }}
-    className={`flex flex-col items-center justify-center px-3 py-1 transition-colors 
+    className={`relative flex flex-col items-center justify-center px-3 py-1 transition-colors 
       ${mobileOnly ? "md:hidden w-full" : ""} 
       ${
         activeTab === tab
@@ -168,10 +175,17 @@ const NavItem = ({
           : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
       }`}
   >
-    <Icon
-      className={`h-6 w-6 ${activeTab === tab ? "fill-current" : ""}`}
-      strokeWidth={activeTab === tab ? 2.5 : 2}
-    />
+    <div className="relative">
+      <Icon
+        className={`h-6 w-6 ${activeTab === tab ? "fill-current" : ""}`}
+        strokeWidth={activeTab === tab ? 2.5 : 2}
+      />
+      {/* KIRMIZI NOKTA BİLDİRİMİ */}
+      {badge && (
+        <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white dark:border-gray-900 animate-pulse"></span>
+      )}
+    </div>
+
     <span
       className={`text-[10px] mt-0.5 font-medium ${
         mobileOnly ? "" : "md:hidden"
@@ -182,6 +196,7 @@ const NavItem = ({
   </button>
 );
 
+// --- SPOTLIGHT COMPONENT ---
 const Spotlight = ({ posts, onProfileClick }) => {
   const scrollRef = React.useRef(null);
   const [isPaused, setIsPaused] = useState(false);
@@ -256,12 +271,14 @@ const Spotlight = ({ posts, onProfileClick }) => {
   );
 };
 
+// --- CHAT LIST COMPONENT (OKUNMAMIŞ MESAJLARI GÖSTERİR) ---
 const ChatList = ({ user, activeChat, setActiveChat }) => {
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) return;
+
     const q = query(
       collection(db, "chats"),
       where("participants", "array-contains", user.id),
@@ -277,6 +294,10 @@ const ChatList = ({ user, activeChat, setActiveChat }) => {
           image: "https://via.placeholder.com/150",
         };
 
+        // Okunmamış mesaj kontrolü
+        // Eğer "unreadBy" listesinde benim ID'm varsa, bu sohbet okunmamıştır.
+        const isUnread = data.unreadBy?.includes(user.id);
+
         return {
           id: doc.id,
           ownerId: otherUserId,
@@ -284,6 +305,7 @@ const ChatList = ({ user, activeChat, setActiveChat }) => {
           image: otherUser.image || "https://via.placeholder.com/150",
           lastMessage: data.lastMessage,
           time: data.lastUpdated,
+          isUnread, // Yeni field
         };
       });
       setChats(chatList);
@@ -318,7 +340,7 @@ const ChatList = ({ user, activeChat, setActiveChat }) => {
             activeChat?.id === chat.id
               ? "bg-pink-50 dark:bg-pink-900/10 border-l-4 border-l-pink-500"
               : "hover:bg-gray-50 dark:hover:bg-gray-800"
-          }`}
+          } ${chat.isUnread ? "bg-gray-50 dark:bg-gray-800" : ""}`}
         >
           <img
             src={chat.image}
@@ -328,7 +350,7 @@ const ChatList = ({ user, activeChat, setActiveChat }) => {
             <div className="flex justify-between items-baseline mb-1">
               <h3
                 className={`font-bold truncate ${
-                  activeChat?.id === chat.id
+                  activeChat?.id === chat.id || chat.isUnread
                     ? "text-pink-600 dark:text-pink-400"
                     : "text-gray-900 dark:text-white"
                 }`}
@@ -342,9 +364,20 @@ const ChatList = ({ user, activeChat, setActiveChat }) => {
                 })}
               </span>
             </div>
-            <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
-              {chat.lastMessage}
-            </p>
+            <div className="flex justify-between items-center">
+              <p
+                className={`text-sm truncate ${
+                  chat.isUnread
+                    ? "font-bold text-gray-900 dark:text-white"
+                    : "text-gray-500 dark:text-gray-400"
+                }`}
+              >
+                {chat.lastMessage}
+              </p>
+              {chat.isUnread && (
+                <div className="w-2 h-2 bg-pink-500 rounded-full ml-2"></div>
+              )}
+            </div>
           </div>
         </div>
       ))}
@@ -352,6 +385,7 @@ const ChatList = ({ user, activeChat, setActiveChat }) => {
   );
 };
 
+// --- CHAT WINDOW COMPONENT (OKUNDU İŞARETLEME EKLENDİ) ---
 const ChatWindow = ({ activeChat, setActiveChat, user }) => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
@@ -359,6 +393,7 @@ const ChatWindow = ({ activeChat, setActiveChat, user }) => {
 
   const chatId = [user.id, activeChat.ownerId].sort().join("_");
 
+  // Mesajları Çek
   useEffect(() => {
     if (!chatId) return;
     const q = query(
@@ -374,6 +409,18 @@ const ChatWindow = ({ activeChat, setActiveChat, user }) => {
     });
     return () => unsubscribe();
   }, [chatId]);
+
+  // Sohbet açıldığında "Okundu" olarak işaretle (unreadBy listesinden kendini sil)
+  useEffect(() => {
+    if (!chatId || !user) return;
+    const markAsRead = async () => {
+      const chatRef = doc(db, "chats", chatId);
+      await updateDoc(chatRef, {
+        unreadBy: arrayRemove(user.id),
+      });
+    };
+    markAsRead();
+  }, [chatId, user]);
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -402,6 +449,8 @@ const ChatWindow = ({ activeChat, setActiveChat, user }) => {
         },
         lastMessage: messageText,
         lastUpdated: serverTimestamp(),
+        // Karşı tarafın ID'sini "unreadBy" listesine ekle (Onlar okumadı)
+        unreadBy: arrayUnion(activeChat.ownerId),
       },
       { merge: true }
     );
@@ -409,6 +458,7 @@ const ChatWindow = ({ activeChat, setActiveChat, user }) => {
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-gray-900 w-full">
+      {/* Header */}
       <div className="p-3 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center bg-white dark:bg-gray-900 z-10 shadow-sm sticky top-0 safe-area-top">
         <div className="flex items-center gap-3">
           <button
@@ -436,6 +486,7 @@ const ChatWindow = ({ activeChat, setActiveChat, user }) => {
         </button>
       </div>
 
+      {/* Mesaj Alanı */}
       <div className="flex-1 bg-gray-50 dark:bg-black/50 p-4 overflow-y-auto flex flex-col gap-3">
         {messages.map((msg) => (
           <div
@@ -452,6 +503,7 @@ const ChatWindow = ({ activeChat, setActiveChat, user }) => {
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Input Alanı */}
       <form
         onSubmit={handleSendMessage}
         className="p-3 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex gap-2 safe-area-bottom sticky bottom-0"
@@ -474,6 +526,7 @@ const ChatWindow = ({ activeChat, setActiveChat, user }) => {
   );
 };
 
+// --- CHAT LAYOUT ---
 const ChatLayout = ({ user, activeChat, setActiveChat }) => {
   return (
     <div className="flex h-mobile-chat md:h-[calc(100vh-80px)] max-w-6xl mx-auto w-full bg-white dark:bg-gray-900 md:border border-gray-200 dark:border-gray-800 md:rounded-2xl md:shadow-2xl overflow-hidden md:mt-4">
@@ -518,6 +571,7 @@ const ChatLayout = ({ user, activeChat, setActiveChat }) => {
   );
 };
 
+// --- PROFILE VIEW ---
 const ProfileView = ({ user, setShowOnboarding, handleLogout, posts }) => {
   const myPosts = posts.filter((p) => p.ownerId === user.id);
 
@@ -939,6 +993,7 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [darkMode, setDarkMode] = useState(true);
+  const [unreadCount, setUnreadCount] = useState(0); // YENİ: Bildirim sayısı
 
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState("login");
@@ -958,6 +1013,7 @@ export default function App() {
     }
   }, [darkMode]);
 
+  // KULLANICI OTURUMU & VERİSİ
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
@@ -988,6 +1044,25 @@ export default function App() {
     });
     return () => unsubscribe();
   }, []);
+
+  // GLOBAL BİLDİRİM DİNLEYİCİ (UNREAD COUNT)
+  useEffect(() => {
+    if (!user) {
+      setUnreadCount(0);
+      return;
+    }
+
+    const q = query(
+      collection(db, "chats"),
+      where("unreadBy", "array-contains", user.id)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      setUnreadCount(snapshot.size);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
 
   const fetchPosts = async (isLoadMore = false) => {
     setLoadingPosts(true);
@@ -1048,7 +1123,6 @@ export default function App() {
   };
 
   const handleCompleteOnboarding = async (profileData) => {
-    // Eğer kullanıcı kapatırsa
     if (!profileData) {
       setShowOnboarding(false);
       return;
@@ -1060,7 +1134,6 @@ export default function App() {
         photoURL: profileData.image,
       });
 
-      // Firestore için düzgün paketlenmiş veri
       const firestoreData = {
         name: profileData.name,
         image: profileData.image,
@@ -1077,8 +1150,6 @@ export default function App() {
       await setDoc(doc(db, "users", auth.currentUser.uid), firestoreData, {
         merge: true,
       });
-
-      // State'i güncelle
       setUser((prev) => ({ ...prev, ...firestoreData }));
     }
     setShowOnboarding(false);
@@ -1150,7 +1221,6 @@ export default function App() {
   });
 
   const boostedPosts = posts.filter((p) => p.boosted);
-
   const hideBottomNav = activeTab === "chat" && activeChat !== null;
 
   if (authLoading)
@@ -1202,6 +1272,7 @@ export default function App() {
               activeTab={activeTab}
               setActiveTab={setActiveTab}
               requireAuth={requireAuth}
+              badge={unreadCount > 0} // BADGE EKLENDİ
             />
             <NavItem
               tab="ai-studio"
@@ -1369,6 +1440,7 @@ export default function App() {
                     <button className="bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-white py-1.5 rounded-lg text-xs font-bold transition-colors">
                       View Profile
                     </button>
+                    {/* GÜVENLİ MESAJ BUTONU */}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -1401,26 +1473,13 @@ export default function App() {
                               },
                               lastUpdated: serverTimestamp(),
                               createdAt: serverTimestamp(),
+                              unreadBy: arrayUnion(ownerId), // İLK MESAJDA BİLDİRİM EKLE
                             });
                           } else {
-                            await setDoc(
-                              chatRef,
-                              {
-                                participants: [user.id, ownerId],
-                                users: {
-                                  [user.id]: {
-                                    name: user.name,
-                                    image: user.image,
-                                  },
-                                  [ownerId]: {
-                                    name: post.name,
-                                    image: post.image,
-                                  },
-                                },
-                                lastUpdated: serverTimestamp(),
-                              },
-                              { merge: true }
-                            );
+                            await updateDoc(chatRef, {
+                              lastUpdated: serverTimestamp(),
+                              // Mevcut katılımcı listesi değişmiyor, sadece güncelle
+                            });
                           }
 
                           setActiveChat(chatData);
@@ -1519,6 +1578,7 @@ export default function App() {
             setActiveTab={setActiveTab}
             requireAuth={requireAuth}
             mobileOnly
+            badge={unreadCount > 0} // BADGE DESTEĞİ
           />
           <NavItem
             tab="profile"
@@ -1615,6 +1675,7 @@ export default function App() {
                   </a>
                 )}
               </div>
+              {/* GÜVENLİ MESAJ BUTONU (MODAL İÇİN) */}
               <button
                 onClick={() => {
                   setSelectedProfile(null);
@@ -1644,23 +1705,12 @@ export default function App() {
                         },
                         lastUpdated: serverTimestamp(),
                         createdAt: serverTimestamp(),
+                        unreadBy: arrayUnion(ownerId), // İLK MESAJ BİLDİRİMİ
                       });
                     } else {
-                      await setDoc(
-                        chatRef,
-                        {
-                          participants: [user.id, ownerId],
-                          users: {
-                            [user.id]: { name: user.name, image: user.image },
-                            [ownerId]: {
-                              name: selectedProfile.name,
-                              image: selectedProfile.image,
-                            },
-                          },
-                          lastUpdated: serverTimestamp(),
-                        },
-                        { merge: true }
-                      );
+                      await updateDoc(chatRef, {
+                        lastUpdated: serverTimestamp(),
+                      });
                     }
 
                     setActiveChat(chatData);
