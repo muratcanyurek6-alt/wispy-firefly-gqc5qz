@@ -56,7 +56,7 @@ import {
   MoreVertical,
 } from "lucide-react";
 
-// --- STYLE & CDN ---
+// --- 1. AYARLAR VE STİLLER ---
 const TailwindCDN = () => (
   <>
     <link
@@ -73,13 +73,11 @@ const TailwindCDN = () => (
   </>
 );
 
-/* --- CLOUDINARY CONFIG --- */
 const CLOUDINARY_CONFIG = {
   cloudName: "dqoh1mjjk",
   uploadPreset: "yxdnini8",
 };
 
-/* --- FIREBASE CONFIG --- */
 const firebaseConfig = {
   apiKey: "AIzaSyAQmTeBxY21B0y51uJVfGCirJIi4xuSeWE",
   authDomain: "linkup-app-6318c.firebaseapp.com",
@@ -92,12 +90,11 @@ const firebaseConfig = {
 
 const apiKey = ""; // Gemini API Key
 
-/* --- INITIALIZE SYSTEM --- */
+// --- 2. SİSTEM BAŞLATMA ---
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-/* --- CATEGORIES --- */
 const CATEGORIES = [
   { id: "COLLAB", label: "Collab 🎥", color: "purple" },
   { id: "S4S", label: "S4S / Promo 🔄", color: "pink" },
@@ -107,7 +104,7 @@ const CATEGORIES = [
   { id: "SERVICE", label: "Services 📸", color: "orange" },
 ];
 
-/* --- IMAGE UPLOAD FUNCTION --- */
+// --- 3. YARDIMCI FONKSİYONLAR ---
 const uploadImageToCloudinary = async (file) => {
   if (!file) return null;
   const formData = new FormData();
@@ -123,18 +120,18 @@ const uploadImageToCloudinary = async (file) => {
     if (data.error) throw new Error(data.error.message);
     return data.secure_url;
   } catch (error) {
-    console.error("Image upload error:", error);
+    console.error("Resim hatası:", error);
     alert("Image upload failed.");
     return null;
   }
 };
 
-/* --- FAKE DATA GENERATOR --- */
 const generateFakeData = async () => {
-  alert("⚠️ Fake Data feature exists in code but button is hidden.");
+  alert("⚠️ Fake Data feature exists but hidden.");
 };
 
-// --- NAV ITEM COMPONENT ---
+// --- 4. ALT BİLEŞENLER (SUB-COMPONENTS) ---
+
 const NavItem = ({
   tab,
   icon: Icon,
@@ -185,7 +182,6 @@ const NavItem = ({
   </button>
 );
 
-// --- SPOTLIGHT COMPONENT ---
 const Spotlight = ({ posts, onProfileClick }) => {
   const scrollRef = React.useRef(null);
   const [isPaused, setIsPaused] = useState(false);
@@ -260,14 +256,12 @@ const Spotlight = ({ posts, onProfileClick }) => {
   );
 };
 
-// --- CHAT LIST COMPONENT ---
 const ChatList = ({ user, activeChat, setActiveChat }) => {
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) return;
-
     const q = query(
       collection(db, "chats"),
       where("participants", "array-contains", user.id),
@@ -358,7 +352,6 @@ const ChatList = ({ user, activeChat, setActiveChat }) => {
   );
 };
 
-// --- CHAT WINDOW COMPONENT ---
 const ChatWindow = ({ activeChat, setActiveChat, user }) => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
@@ -481,7 +474,6 @@ const ChatWindow = ({ activeChat, setActiveChat, user }) => {
   );
 };
 
-// --- CHAT LAYOUT ---
 const ChatLayout = ({ user, activeChat, setActiveChat }) => {
   return (
     <div className="flex h-mobile-chat md:h-[calc(100vh-80px)] max-w-6xl mx-auto w-full bg-white dark:bg-gray-900 md:border border-gray-200 dark:border-gray-800 md:rounded-2xl md:shadow-2xl overflow-hidden md:mt-4">
@@ -526,7 +518,6 @@ const ChatLayout = ({ user, activeChat, setActiveChat }) => {
   );
 };
 
-// --- PROFILE VIEW ---
 const ProfileView = ({ user, setShowOnboarding, handleLogout, posts }) => {
   const myPosts = posts.filter((p) => p.ownerId === user.id);
 
@@ -680,9 +671,7 @@ function AuthModal({ mode, setMode, onClose, onSubmit }) {
   );
 }
 
-// --- DÜZELTİLMİŞ ONBOARDING MODAL (OTOMATİK DOLDURMA & DÜZELTME) ---
 function OnboardingModal({ onComplete, initialData }) {
-  // State'i düzleştirilmiş (flat) olarak başlatıyoruz ve varsa eski verileri çekiyoruz
   const [data, setData] = useState({
     name: initialData?.name || "",
     image:
@@ -691,7 +680,6 @@ function OnboardingModal({ onComplete, initialData }) {
         Math.random() * 1000
       )}`,
     bio: initialData?.bio || "",
-    // İç içe veriyi (socials) düz hale getiriyoruz (Flatten)
     instagram: initialData?.socials?.instagram || "",
     twitter: initialData?.socials?.twitter || "",
     onlyfans: initialData?.socials?.onlyfans || "",
@@ -710,18 +698,13 @@ function OnboardingModal({ onComplete, initialData }) {
     }
   };
 
-  // Kaydet butonuna basıldığında çalışacak fonksiyon
   const handleSave = async () => {
-    // --- VALIDATION: İSİM KONTROLÜ ---
     if (!data.name.trim()) {
       alert("Please enter a Display Name.");
       return;
     }
-    // ------------------------------
-
     setSaving(true);
     try {
-      // Düz veriyi onComplete'e yolla, orada paketlenecek
       await onComplete(data);
     } catch (error) {
       console.error("Profile save error:", error);
@@ -942,6 +925,782 @@ function PostModal({ onClose, onSubmit }) {
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+// --- 5. ANA UYGULAMA ---
+export default function App() {
+  const [activeTab, setActiveTab] = useState("feed");
+  const [posts, setPosts] = useState([]);
+  const [loadingPosts, setLoadingPosts] = useState(true);
+  const [filter, setFilter] = useState("ALL");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [darkMode, setDarkMode] = useState(true);
+
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authMode, setAuthMode] = useState("login");
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showPostModal, setShowPostModal] = useState(false);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [selectedProfile, setSelectedProfile] = useState(null);
+  const [activeChat, setActiveChat] = useState(null);
+  const [editingPost, setEditingPost] = useState(null);
+  const [lastDoc, setLastDoc] = useState(null);
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [darkMode]);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (currentUser) {
+        const userDocRef = doc(db, "users", currentUser.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        if (userDocSnap.exists()) {
+          const userData = userDocSnap.data();
+          setUser({
+            id: currentUser.uid,
+            email: currentUser.email,
+            ...userData,
+          });
+        } else {
+          setUser({
+            id: currentUser.uid,
+            email: currentUser.email,
+            name: currentUser.displayName || "New Member",
+            image:
+              currentUser.photoURL ||
+              `https://api.dicebear.com/9.x/avataaars/svg?seed=${currentUser.uid}`,
+            verified: false,
+          });
+        }
+      } else {
+        setUser(null);
+      }
+      setAuthLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const fetchPosts = async (isLoadMore = false) => {
+    setLoadingPosts(true);
+    try {
+      let q = query(
+        collection(db, "posts"),
+        orderBy("createdAt", "desc"),
+        limit(20)
+      );
+      if (isLoadMore && lastDoc) {
+        q = query(
+          collection(db, "posts"),
+          orderBy("createdAt", "desc"),
+          startAfter(lastDoc),
+          limit(20)
+        );
+      }
+      const snapshot = await getDocs(q);
+      const newPosts = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      if (snapshot.docs.length > 0) {
+        setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
+        if (isLoadMore) {
+          setPosts((prev) => [...prev, ...newPosts]);
+        } else {
+          setPosts(newPosts);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching posts:", error);
+    }
+    setLoadingPosts(false);
+  };
+
+  useEffect(() => {
+    fetchPosts();
+  }, []);
+
+  const handleAuthSubmit = async (e, email, password) => {
+    e.preventDefault();
+    try {
+      if (authMode === "login") {
+        await signInWithEmailAndPassword(auth, email, password);
+        setShowAuthModal(false);
+      } else {
+        await createUserWithEmailAndPassword(auth, email, password);
+        setShowAuthModal(false);
+        setTimeout(() => {
+          setShowOnboarding(true);
+        }, 500);
+      }
+    } catch (error) {
+      alert("Error: " + error.message);
+    }
+  };
+
+  const handleCompleteOnboarding = async (profileData) => {
+    // Eğer kullanıcı kapatırsa
+    if (!profileData) {
+      setShowOnboarding(false);
+      return;
+    }
+
+    if (auth.currentUser) {
+      await updateProfile(auth.currentUser, {
+        displayName: profileData.name,
+        photoURL: profileData.image,
+      });
+
+      // Firestore için düzgün paketlenmiş veri
+      const firestoreData = {
+        name: profileData.name,
+        image: profileData.image,
+        bio: profileData.bio,
+        socials: {
+          instagram: profileData.instagram,
+          twitter: profileData.twitter,
+          onlyfans: profileData.onlyfans,
+        },
+        email: auth.currentUser.email,
+        uid: auth.currentUser.uid,
+      };
+
+      await setDoc(doc(db, "users", auth.currentUser.uid), firestoreData, {
+        merge: true,
+      });
+
+      // State'i güncelle
+      setUser((prev) => ({ ...prev, ...firestoreData }));
+    }
+    setShowOnboarding(false);
+  };
+
+  const handleLogout = async () => {
+    if (window.confirm("Are you sure you want to log out?")) {
+      await signOut(auth);
+      setActiveChat(null);
+    }
+  };
+
+  const handlePostAd = async (formData) => {
+    if (!user) return;
+    try {
+      const postData = {
+        ownerId: user.id,
+        name: user.name,
+        handle:
+          "@" +
+          (user.name ? user.name.replace(/\s/g, "").toLowerCase() : "user"),
+        image: user.image,
+        verified: user.verified,
+        boosted: formData.isBoosted,
+        urgent: formData.isUrgent,
+        type: formData.type,
+        location: formData.location,
+        desc: formData.desc,
+        tags: ["New", formData.type],
+        createdAt: serverTimestamp(),
+        followers: "New",
+        socials: user.socials || {},
+      };
+      await addDoc(collection(db, "posts"), postData);
+      setShowPostModal(false);
+      setEditingPost(null);
+      fetchPosts();
+    } catch (error) {
+      alert("Failed to post ad.");
+    }
+  };
+
+  const handleDelete = async (postId) => {
+    if (window.confirm("Are you sure you want to delete this post?")) {
+      try {
+        await deleteDoc(doc(db, "posts", postId));
+        setPosts(posts.filter((p) => p.id !== postId));
+      } catch (error) {
+        console.error("Delete error:", error);
+      }
+    }
+  };
+
+  const requireAuth = (action) => {
+    if (user) action();
+    else {
+      setAuthMode("login");
+      setShowAuthModal(true);
+    }
+  };
+
+  const filteredPosts = posts.filter((post) => {
+    const matchesCategory = filter === "ALL" || post.type === filter;
+    const searchLower = searchQuery.toLowerCase();
+    const matchesSearch =
+      (post.name && post.name.toLowerCase().includes(searchLower)) ||
+      (post.desc && post.desc.toLowerCase().includes(searchLower));
+    return matchesCategory && matchesSearch;
+  });
+
+  const boostedPosts = posts.filter((p) => p.boosted);
+
+  const hideBottomNav = activeTab === "chat" && activeChat !== null;
+
+  if (authLoading)
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <Loader2 className="h-10 w-10 text-pink-500 animate-spin" />
+      </div>
+    );
+
+  return (
+    <div
+      className={`min-h-screen font-sans selection:bg-pink-500 selection:text-white pb-24 md:pb-0 transition-colors duration-300 ${
+        darkMode ? "dark bg-gray-900 text-gray-200" : "bg-gray-50 text-gray-900"
+      }`}
+    >
+      <TailwindCDN />
+
+      {/* NAVBAR */}
+      <nav className="sticky top-0 z-40 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800 transition-colors duration-300">
+        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
+          <div
+            className="flex items-center gap-2 cursor-pointer"
+            onClick={() => {
+              setActiveTab("feed");
+              window.scrollTo(0, 0);
+            }}
+          >
+            <div className="bg-gradient-to-tr from-pink-600 to-purple-600 p-1.5 rounded-lg shadow-lg shadow-pink-600/20">
+              <Users className="h-4 w-4 text-white" />
+            </div>
+            <h1 className="text-lg font-bold text-gray-900 dark:text-white tracking-tight">
+              Link<span className="text-pink-500">Up</span>
+            </h1>
+          </div>
+
+          {/* DESKTOP MENÜ */}
+          <div className="hidden md:flex items-center gap-6">
+            <NavItem
+              tab="feed"
+              icon={Home}
+              label="Home"
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+            />
+            <NavItem
+              tab="chat"
+              icon={MessageCircle}
+              label="Chat"
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              requireAuth={requireAuth}
+            />
+            <NavItem
+              tab="ai-studio"
+              icon={Wand2}
+              label="AI"
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              requireAuth={requireAuth}
+            />
+            <NavItem
+              tab="profile"
+              icon={User}
+              label="Profile"
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              requireAuth={requireAuth}
+            />
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setDarkMode(!darkMode)}
+              className="p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            >
+              {darkMode ? (
+                <Sun className="h-5 w-5" />
+              ) : (
+                <Moon className="h-5 w-5" />
+              )}
+            </button>
+            {!user && (
+              <button
+                onClick={() => {
+                  setAuthMode("login");
+                  setShowAuthModal(true);
+                }}
+                className="bg-pink-600 hover:bg-pink-700 text-white px-4 py-1.5 rounded-full text-xs font-bold shadow-lg shadow-pink-600/20"
+              >
+                Login
+              </button>
+            )}
+            {user && (
+              <div className="hidden md:flex items-center gap-3 ml-4">
+                <img
+                  src={user.image}
+                  className="h-8 w-8 rounded-full object-cover border border-gray-600"
+                />
+                <span className="text-sm font-bold">{user.name}</span>
+                <button
+                  onClick={handleLogout}
+                  className="text-red-500 hover:bg-red-500/10 p-2 rounded-full transition-colors"
+                >
+                  <LogOut className="h-5 w-5" />
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </nav>
+
+      {/* İÇERİK */}
+      {activeTab === "feed" && (
+        <>
+          <div className="relative bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 transition-colors duration-300 pt-4 pb-4">
+            <div className="max-w-6xl mx-auto px-4">
+              <div className="relative flex bg-white dark:bg-gray-950 rounded-xl items-center p-2 border border-gray-200 dark:border-gray-800 focus-within:border-pink-500 w-full transition-colors mb-4">
+                <Search className="h-5 w-5 text-gray-400 ml-2" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search creators, cities..."
+                  className="bg-transparent border-none text-gray-900 dark:text-white px-3 py-1 focus:ring-0 outline-none w-full text-sm"
+                />
+              </div>
+
+              <Spotlight
+                posts={boostedPosts}
+                onProfileClick={(post) =>
+                  requireAuth(() => setSelectedProfile(post))
+                }
+              />
+
+              <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar mt-4">
+                <button
+                  onClick={() => setFilter("ALL")}
+                  className={`px-4 py-1.5 rounded-full text-xs font-bold border whitespace-nowrap transition-colors ${
+                    filter === "ALL"
+                      ? "bg-gray-900 text-white dark:bg-white dark:text-black"
+                      : "bg-white dark:bg-gray-950 text-gray-500 border-gray-200 dark:border-gray-700"
+                  }`}
+                >
+                  All
+                </button>
+                {CATEGORIES.map((cat) => (
+                  <button
+                    key={cat.id}
+                    onClick={() => setFilter(cat.id)}
+                    className={`px-4 py-1.5 rounded-full text-xs font-bold border whitespace-nowrap flex items-center gap-2 transition-colors ${
+                      filter === cat.id
+                        ? "bg-pink-600 text-white"
+                        : "bg-white dark:bg-gray-950 text-gray-500 border-gray-200 dark:border-gray-700"
+                    }`}
+                  >
+                    {cat.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <main className="max-w-6xl mx-auto px-4 py-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredPosts.map((post) => (
+                <div
+                  key={post.id}
+                  onClick={() => requireAuth(() => setSelectedProfile(post))}
+                  className={`relative bg-white dark:bg-gray-900 rounded-2xl p-4 border transition-all active:scale-95 duration-200 cursor-pointer flex flex-col group ${
+                    post.boosted
+                      ? "border-yellow-500/70 shadow-[0_0_15px_rgba(234,179,8,0.15)] bg-gradient-to-b from-yellow-50/50 to-white dark:from-yellow-900/10 dark:to-gray-900"
+                      : "border-gray-200 dark:border-gray-800"
+                  }`}
+                >
+                  <div className="absolute -top-2.5 left-4 flex gap-2">
+                    {post.boosted && (
+                      <div className="bg-yellow-500 text-black text-[9px] font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">
+                        <Zap className="h-3 w-3 fill-black" /> PROMOTED
+                      </div>
+                    )}
+                    {post.urgent && (
+                      <div className="bg-red-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1 animate-pulse">
+                        <Flame className="h-3 w-3 fill-white" /> URGENT
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3 mb-3 mt-2">
+                    <img
+                      src={post.image}
+                      className={`h-10 w-10 rounded-full object-cover border-2 ${
+                        post.boosted
+                          ? "border-yellow-500"
+                          : "border-gray-200 dark:border-gray-700"
+                      }`}
+                    />
+                    <div>
+                      <h3
+                        className={`font-bold text-sm ${
+                          post.boosted
+                            ? "text-yellow-600 dark:text-yellow-500"
+                            : "text-gray-900 dark:text-white"
+                        }`}
+                      >
+                        {post.name}
+                      </h3>
+                      <div className="text-[10px] text-gray-500">
+                        {post.location}
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-600 dark:text-gray-300 mb-3 line-clamp-3">
+                    {post.desc}
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-2 mt-auto">
+                    <button className="bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-white py-1.5 rounded-lg text-xs font-bold transition-colors">
+                      View Profile
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        requireAuth(async () => {
+                          const ownerId = post.ownerId;
+                          if (!ownerId) return;
+
+                          const chatData = {
+                            id: [user.id, ownerId].sort().join("_"),
+                            ownerId: ownerId,
+                            name: post.name,
+                            image: post.image,
+                          };
+
+                          const chatRef = doc(db, "chats", chatData.id);
+                          const chatSnap = await getDoc(chatRef);
+
+                          if (!chatSnap.exists()) {
+                            await setDoc(chatRef, {
+                              participants: [user.id, ownerId],
+                              users: {
+                                [user.id]: {
+                                  name: user.name,
+                                  image: user.image,
+                                },
+                                [ownerId]: {
+                                  name: post.name,
+                                  image: post.image,
+                                },
+                              },
+                              lastUpdated: serverTimestamp(),
+                              createdAt: serverTimestamp(),
+                            });
+                          } else {
+                            await setDoc(
+                              chatRef,
+                              {
+                                participants: [user.id, ownerId],
+                                users: {
+                                  [user.id]: {
+                                    name: user.name,
+                                    image: user.image,
+                                  },
+                                  [ownerId]: {
+                                    name: post.name,
+                                    image: post.image,
+                                  },
+                                },
+                                lastUpdated: serverTimestamp(),
+                              },
+                              { merge: true }
+                            );
+                          }
+
+                          setActiveChat(chatData);
+                          setActiveTab("chat");
+                        });
+                      }}
+                      className="bg-pink-600 hover:bg-pink-700 text-white py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-2 shadow-lg shadow-pink-600/20"
+                    >
+                      <MessageCircle className="h-3.5 w-3.5" /> Message
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-8 text-center">
+              <button
+                onClick={() => fetchPosts(true)}
+                disabled={loadingPosts}
+                className="px-6 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-sm font-bold text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+              >
+                {loadingPosts ? "Loading..." : "Load More"}
+              </button>
+            </div>
+          </main>
+
+          <div className="fixed bottom-24 right-4 z-30 md:hidden">
+            <button
+              onClick={generateFakeData}
+              className="bg-red-600/80 text-white p-2 rounded-full shadow-lg backdrop-blur-sm"
+            >
+              <Database className="h-5 w-5" />
+            </button>
+          </div>
+        </>
+      )}
+
+      {activeTab === "ai-studio" && <AIStudio />}
+
+      {/* CHAT SAYFASI */}
+      {activeTab === "chat" && (
+        <ChatLayout
+          user={user}
+          activeChat={activeChat}
+          setActiveChat={setActiveChat}
+        />
+      )}
+
+      {activeTab === "profile" && user && (
+        <ProfileView
+          user={user}
+          setShowOnboarding={setShowOnboarding}
+          handleLogout={handleLogout}
+          posts={posts}
+        />
+      )}
+
+      {/* BOTTOM NAV (Mobil İçin) */}
+      {!hideBottomNav && (
+        <div className="md:hidden fixed bottom-0 w-full bg-white/90 dark:bg-gray-900/90 backdrop-blur-lg border-t border-gray-200 dark:border-gray-800 flex justify-around items-center z-50 safe-area-bottom pb-1 transition-all duration-300">
+          <NavItem
+            tab="feed"
+            icon={Home}
+            label="Home"
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            mobileOnly
+          />
+          <NavItem
+            tab="ai-studio"
+            icon={Wand2}
+            label="AI Studio"
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            requireAuth={requireAuth}
+            mobileOnly
+          />
+          <div className="relative -top-5">
+            <button
+              onClick={() =>
+                requireAuth(() => {
+                  setEditingPost(null);
+                  setShowPostModal(true);
+                })
+              }
+              className="bg-gradient-to-tr from-pink-600 to-purple-600 p-4 rounded-full shadow-lg shadow-pink-600/30 text-white transform transition-transform active:scale-95"
+            >
+              <PlusSquare className="h-6 w-6" />
+            </button>
+          </div>
+          <NavItem
+            tab="chat"
+            icon={MessageCircle}
+            label="Chat"
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            requireAuth={requireAuth}
+            mobileOnly
+          />
+          <NavItem
+            tab="profile"
+            icon={User}
+            label="Profile"
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            requireAuth={requireAuth}
+            mobileOnly
+          />
+        </div>
+      )}
+
+      {/* MODALLAR */}
+      {showAuthModal && (
+        <AuthModal
+          mode={authMode}
+          setMode={setAuthMode}
+          onClose={() => setShowAuthModal(false)}
+          onSubmit={handleAuthSubmit}
+        />
+      )}
+      {showOnboarding && (
+        <OnboardingModal
+          onComplete={handleCompleteOnboarding}
+          initialData={user}
+        />
+      )}
+      {showPostModal && (
+        <PostModal
+          onClose={() => setShowPostModal(false)}
+          onSubmit={handlePostAd}
+        />
+      )}
+
+      {selectedProfile && (
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/90 backdrop-blur-sm z-[70] flex items-center justify-center p-4 transition-colors">
+          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl w-full max-w-sm relative p-6 shadow-2xl">
+            <button
+              onClick={() => setSelectedProfile(null)}
+              className="absolute top-4 right-4 text-gray-500 dark:text-white hover:text-gray-800 dark:hover:text-gray-300"
+            >
+              <X />
+            </button>
+            <div className="text-center mt-8">
+              <img
+                src={selectedProfile.image}
+                className="h-24 w-24 rounded-full mx-auto mb-4 border-4 border-white dark:border-gray-800 shadow-lg"
+              />
+              <h2 className="text-2xl text-gray-900 dark:text-white font-bold">
+                {selectedProfile.name}
+              </h2>
+              <p className="text-gray-500 dark:text-gray-400 mb-4">
+                {selectedProfile.bio || selectedProfile.desc}
+              </p>
+              <div className="grid grid-cols-3 gap-2 mb-6">
+                {selectedProfile.socials?.instagram && (
+                  <a
+                    href={`https://instagram.com/${selectedProfile.socials.instagram}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex flex-col items-center bg-gray-100 dark:bg-gray-800 p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 transition-colors"
+                  >
+                    <Instagram className="h-4 w-4 text-pink-500 mb-1" />
+                    <span className="text-[10px] text-gray-600 dark:text-gray-300">
+                      Insta
+                    </span>
+                  </a>
+                )}
+                {selectedProfile.socials?.twitter && (
+                  <a
+                    href={`https://twitter.com/${selectedProfile.socials.twitter}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex flex-col items-center bg-gray-100 dark:bg-gray-800 p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 transition-colors"
+                  >
+                    <Twitter className="h-4 w-4 text-blue-400 mb-1" />
+                    <span className="text-[10px] text-gray-600 dark:text-gray-300">
+                      Twitter
+                    </span>
+                  </a>
+                )}
+                {selectedProfile.socials?.onlyfans && (
+                  <a
+                    href={selectedProfile.socials.onlyfans}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex flex-col items-center bg-gray-100 dark:bg-gray-800 p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 transition-colors"
+                  >
+                    <LinkIcon className="h-4 w-4 text-blue-500 mb-1" />
+                    <span className="text-[10px] text-gray-600 dark:text-gray-300">
+                      Links
+                    </span>
+                  </a>
+                )}
+              </div>
+              <button
+                onClick={() => {
+                  setSelectedProfile(null);
+                  requireAuth(async () => {
+                    const ownerId = selectedProfile.ownerId;
+                    if (!ownerId) return;
+
+                    const chatData = {
+                      id: [user.id, ownerId].sort().join("_"),
+                      ownerId: ownerId,
+                      name: selectedProfile.name,
+                      image: selectedProfile.image,
+                    };
+
+                    const chatRef = doc(db, "chats", chatData.id);
+                    const chatSnap = await getDoc(chatRef);
+
+                    if (!chatSnap.exists()) {
+                      await setDoc(chatRef, {
+                        participants: [user.id, ownerId],
+                        users: {
+                          [user.id]: { name: user.name, image: user.image },
+                          [ownerId]: {
+                            name: selectedProfile.name,
+                            image: selectedProfile.image,
+                          },
+                        },
+                        lastUpdated: serverTimestamp(),
+                        createdAt: serverTimestamp(),
+                      });
+                    } else {
+                      await setDoc(
+                        chatRef,
+                        {
+                          participants: [user.id, ownerId],
+                          users: {
+                            [user.id]: { name: user.name, image: user.image },
+                            [ownerId]: {
+                              name: selectedProfile.name,
+                              image: selectedProfile.image,
+                            },
+                          },
+                          lastUpdated: serverTimestamp(),
+                        },
+                        { merge: true }
+                      );
+                    }
+
+                    setActiveChat(chatData);
+                    setActiveTab("chat");
+                  });
+                }}
+                className="w-full bg-pink-600 text-white py-3 rounded-xl font-bold shadow-lg"
+              >
+                Message
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showPremiumModal && (
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/90 flex items-center justify-center backdrop-blur-sm">
+          <div className="bg-white dark:bg-gray-900 p-8 rounded-2xl border border-gray-200 dark:border-gray-800 text-center shadow-2xl relative">
+            <button
+              onClick={() => setShowPremiumModal(false)}
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 dark:hover:text-white"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <Crown className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
+            <h2 className="text-2xl text-gray-900 dark:text-white font-bold mb-2">
+              Go Premium
+            </h2>
+            <p className="text-gray-500 dark:text-gray-400 mb-6">
+              Get featured & more.
+            </p>
+            <button
+              onClick={() => setShowPremiumModal(false)}
+              className="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white px-6 py-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
