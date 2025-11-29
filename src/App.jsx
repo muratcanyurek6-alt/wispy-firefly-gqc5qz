@@ -15,7 +15,7 @@ import {
   getDocs,
   getDoc,
   setDoc,
-  updateDoc, // EKLENDİ
+  updateDoc,
   query,
   orderBy,
   onSnapshot,
@@ -25,8 +25,8 @@ import {
   startAfter,
   serverTimestamp,
   where,
-  arrayUnion, // EKLENDİ: Bildirim için gerekli
-  arrayRemove, // EKLENDİ: Bildirimi silmek için gerekli
+  arrayUnion,
+  arrayRemove,
 } from "firebase/firestore";
 import {
   MapPin,
@@ -137,7 +137,7 @@ const generateFakeData = async () => {
   alert("⚠️ Fake Data feature exists in code but button is hidden.");
 };
 
-// --- NAV ITEM COMPONENT (BADGE DESTEĞİ EKLENDİ) ---
+// --- NAV ITEM COMPONENT (FIX: Bildirim Badge Desteği Eklendi) ---
 const NavItem = ({
   tab,
   icon: Icon,
@@ -148,7 +148,7 @@ const NavItem = ({
   setEditingPost,
   setShowPostModal,
   mobileOnly,
-  badge, // Yeni Prop: Bildirim Sayısı veya Durumu
+  badge, // YENİ PROP
 }) => (
   <button
     onClick={() => {
@@ -167,7 +167,7 @@ const NavItem = ({
         window.scrollTo(0, 0);
       }
     }}
-    className={`relative flex flex-col items-center justify-center px-3 py-1 transition-colors 
+    className={`flex flex-col items-center justify-center px-3 py-1 transition-colors 
       ${mobileOnly ? "md:hidden w-full" : ""} 
       ${
         activeTab === tab
@@ -180,12 +180,11 @@ const NavItem = ({
         className={`h-6 w-6 ${activeTab === tab ? "fill-current" : ""}`}
         strokeWidth={activeTab === tab ? 2.5 : 2}
       />
-      {/* KIRMIZI NOKTA BİLDİRİMİ */}
+      {/* KIRMIZI BİLDİRİM NOKTASI */}
       {badge && (
         <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white dark:border-gray-900 animate-pulse"></span>
       )}
     </div>
-
     <span
       className={`text-[10px] mt-0.5 font-medium ${
         mobileOnly ? "" : "md:hidden"
@@ -271,7 +270,7 @@ const Spotlight = ({ posts, onProfileClick }) => {
   );
 };
 
-// --- CHAT LIST COMPONENT (OKUNMAMIŞ MESAJLARI GÖSTERİR) ---
+// --- CHAT LIST COMPONENT ---
 const ChatList = ({ user, activeChat, setActiveChat }) => {
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -295,7 +294,6 @@ const ChatList = ({ user, activeChat, setActiveChat }) => {
         };
 
         // Okunmamış mesaj kontrolü
-        // Eğer "unreadBy" listesinde benim ID'm varsa, bu sohbet okunmamıştır.
         const isUnread = data.unreadBy?.includes(user.id);
 
         return {
@@ -385,7 +383,7 @@ const ChatList = ({ user, activeChat, setActiveChat }) => {
   );
 };
 
-// --- CHAT WINDOW COMPONENT (OKUNDU İŞARETLEME EKLENDİ) ---
+// --- CHAT WINDOW COMPONENT ---
 const ChatWindow = ({ activeChat, setActiveChat, user }) => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
@@ -393,7 +391,6 @@ const ChatWindow = ({ activeChat, setActiveChat, user }) => {
 
   const chatId = [user.id, activeChat.ownerId].sort().join("_");
 
-  // Mesajları Çek
   useEffect(() => {
     if (!chatId) return;
     const q = query(
@@ -410,7 +407,7 @@ const ChatWindow = ({ activeChat, setActiveChat, user }) => {
     return () => unsubscribe();
   }, [chatId]);
 
-  // Sohbet açıldığında "Okundu" olarak işaretle (unreadBy listesinden kendini sil)
+  // Okundu İşaretleme
   useEffect(() => {
     if (!chatId || !user) return;
     const markAsRead = async () => {
@@ -449,8 +446,7 @@ const ChatWindow = ({ activeChat, setActiveChat, user }) => {
         },
         lastMessage: messageText,
         lastUpdated: serverTimestamp(),
-        // Karşı tarafın ID'sini "unreadBy" listesine ekle (Onlar okumadı)
-        unreadBy: arrayUnion(activeChat.ownerId),
+        unreadBy: arrayUnion(activeChat.ownerId), // Karşı tarafın ID'sini ekle
       },
       { merge: true }
     );
@@ -458,7 +454,6 @@ const ChatWindow = ({ activeChat, setActiveChat, user }) => {
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-gray-900 w-full">
-      {/* Header */}
       <div className="p-3 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center bg-white dark:bg-gray-900 z-10 shadow-sm sticky top-0 safe-area-top">
         <div className="flex items-center gap-3">
           <button
@@ -486,7 +481,6 @@ const ChatWindow = ({ activeChat, setActiveChat, user }) => {
         </button>
       </div>
 
-      {/* Mesaj Alanı */}
       <div className="flex-1 bg-gray-50 dark:bg-black/50 p-4 overflow-y-auto flex flex-col gap-3">
         {messages.map((msg) => (
           <div
@@ -503,7 +497,6 @@ const ChatWindow = ({ activeChat, setActiveChat, user }) => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Alanı */}
       <form
         onSubmit={handleSendMessage}
         className="p-3 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex gap-2 safe-area-bottom sticky bottom-0"
@@ -993,7 +986,7 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [darkMode, setDarkMode] = useState(true);
-  const [unreadCount, setUnreadCount] = useState(0); // YENİ: Bildirim sayısı
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState("login");
@@ -1013,7 +1006,6 @@ export default function App() {
     }
   }, [darkMode]);
 
-  // KULLANICI OTURUMU & VERİSİ
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
@@ -1045,7 +1037,7 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  // GLOBAL BİLDİRİM DİNLEYİCİ (UNREAD COUNT)
+  // GLOBAL BİLDİRİM DİNLEYİCİ
   useEffect(() => {
     if (!user) {
       setUnreadCount(0);
@@ -1221,6 +1213,7 @@ export default function App() {
   });
 
   const boostedPosts = posts.filter((p) => p.boosted);
+
   const hideBottomNav = activeTab === "chat" && activeChat !== null;
 
   if (authLoading)
@@ -1272,7 +1265,7 @@ export default function App() {
               activeTab={activeTab}
               setActiveTab={setActiveTab}
               requireAuth={requireAuth}
-              badge={unreadCount > 0} // BADGE EKLENDİ
+              badge={unreadCount > 0} // DESKTOP BADGE
             />
             <NavItem
               tab="ai-studio"
@@ -1473,12 +1466,11 @@ export default function App() {
                               },
                               lastUpdated: serverTimestamp(),
                               createdAt: serverTimestamp(),
-                              unreadBy: arrayUnion(ownerId), // İLK MESAJDA BİLDİRİM EKLE
+                              unreadBy: arrayUnion(ownerId), // İLK MESAJ BİLDİRİMİ
                             });
                           } else {
                             await updateDoc(chatRef, {
                               lastUpdated: serverTimestamp(),
-                              // Mevcut katılımcı listesi değişmiyor, sadece güncelle
                             });
                           }
 
@@ -1578,7 +1570,7 @@ export default function App() {
             setActiveTab={setActiveTab}
             requireAuth={requireAuth}
             mobileOnly
-            badge={unreadCount > 0} // BADGE DESTEĞİ
+            badge={unreadCount > 0} // MOBİL BADGE
           />
           <NavItem
             tab="profile"
