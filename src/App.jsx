@@ -69,10 +69,10 @@ const TailwindCDN = () => (
   </>
 );
 
-/* --- CLOUDINARY AYARLARI (SENİN VERDİĞİN DOĞRU BİLGİLER) --- */
+/* --- CLOUDINARY AYARLARI --- */
 const CLOUDINARY_CONFIG = {
-  cloudName: "dqoh1mjjk", // DÜZELTİLDİ (Çift 'j')
-  uploadPreset: "yxdnini8", // DÜZELTİLDİ (Eski çalışan preset)
+  cloudName: "dqoh1mjjk",
+  uploadPreset: "yxdnini8",
 };
 
 /* --- FIREBASE AYARLARI --- */
@@ -130,7 +130,7 @@ const generateFakeData = async () => {
   alert("⚠️ Fake Data özelliği kodda mevcut ama buton gizli.");
 };
 
-// --- NAV ITEM COMPONENT ---
+// --- NAV ITEM COMPONENT (Mobil İçin) ---
 const NavItem = ({
   tab,
   icon: Icon,
@@ -245,14 +245,13 @@ const Spotlight = ({ posts, onProfileClick }) => {
   );
 };
 
-// --- MESSAGES VIEW (Chat Listesi) ---
+// --- MESSAGES VIEW ---
 const MessagesView = ({ user, setActiveChat }) => {
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) return;
-    // INDEX HATASI ALIRSAN: Konsoldaki linke tıkla!
     const q = query(
       collection(db, "chats"),
       where("participants", "array-contains", user.uid),
@@ -333,7 +332,7 @@ const MessagesView = ({ user, setActiveChat }) => {
   );
 };
 
-// --- CHAT MODAL (DÜZELTİLDİ: Inline Style Silindi & Timestamp Eklendi) ---
+// --- CHAT MODAL ---
 const ChatModal = ({ activeChat, setActiveChat, user }) => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
@@ -364,14 +363,12 @@ const ChatModal = ({ activeChat, setActiveChat, user }) => {
     const messageText = newMessage;
     setNewMessage("");
 
-    // 1. Mesajı Ekle
     await addDoc(collection(db, "chats", chatId, "messages"), {
       text: messageText,
       senderId: user.uid,
       createdAt: serverTimestamp(),
     });
 
-    // 2. Sohbeti Güncelle (CRITICAL FIX: lastUpdated ve createdAt eklendi)
     const chatRef = doc(db, "chats", chatId);
     await setDoc(
       chatRef,
@@ -394,7 +391,6 @@ const ChatModal = ({ activeChat, setActiveChat, user }) => {
 
   return (
     <div className="fixed bottom-0 right-0 md:right-4 w-full md:w-80 h-[100dvh] md:h-[500px] bg-white dark:bg-gray-900 border-t md:border border-gray-200 dark:border-gray-800 md:rounded-t-2xl z-[100] flex flex-col shadow-2xl">
-      {/* Header */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex justify-between bg-white dark:bg-gray-900 md:rounded-t-2xl items-center safe-area-top">
         <div className="flex items-center gap-3">
           <img
@@ -413,7 +409,6 @@ const ChatModal = ({ activeChat, setActiveChat, user }) => {
         </button>
       </div>
 
-      {/* Mesajlar */}
       <div className="flex-1 bg-gray-50 dark:bg-gray-950 p-4 overflow-y-auto flex flex-col gap-3">
         {messages.map((msg) => (
           <div
@@ -430,7 +425,6 @@ const ChatModal = ({ activeChat, setActiveChat, user }) => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
       <form
         onSubmit={handleSendMessage}
         className="p-3 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex gap-2 safe-area-bottom"
@@ -777,7 +771,7 @@ export default function App() {
 
       {/* NAVBAR */}
       <nav className="sticky top-0 z-40 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800 transition-colors duration-300">
-        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between relative">
           <div
             className="flex items-center gap-2 cursor-pointer"
             onClick={() => {
@@ -792,6 +786,46 @@ export default function App() {
               Link<span className="text-pink-500">Up</span>
             </h1>
           </div>
+
+          {/* MASAÜSTÜ ORTA MENÜ (YENİ EKLENDİ) */}
+          {user && (
+            <div className="hidden md:flex items-center gap-8 absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
+              <button
+                onClick={() => setActiveTab("feed")}
+                className={`p-2 rounded-xl transition-colors ${
+                  activeTab === "feed"
+                    ? "bg-pink-50 dark:bg-pink-900/20 text-pink-600"
+                    : "text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
+                }`}
+                title="Home"
+              >
+                <Home className="h-5 w-5" />
+              </button>
+              <button
+                onClick={() => setActiveTab("chat")}
+                className={`p-2 rounded-xl transition-colors ${
+                  activeTab === "chat"
+                    ? "bg-pink-50 dark:bg-pink-900/20 text-pink-600"
+                    : "text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
+                }`}
+                title="Messages"
+              >
+                <MessageCircle className="h-5 w-5" />
+              </button>
+              <button
+                onClick={() => setActiveTab("ai-studio")}
+                className={`p-2 rounded-xl transition-colors ${
+                  activeTab === "ai-studio"
+                    ? "bg-pink-50 dark:bg-pink-900/20 text-pink-600"
+                    : "text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
+                }`}
+                title="AI Studio"
+              >
+                <Wand2 className="h-5 w-5" />
+              </button>
+            </div>
+          )}
+
           <div className="flex items-center gap-3">
             <button
               onClick={() => setDarkMode(!darkMode)}
@@ -803,7 +837,25 @@ export default function App() {
                 <Moon className="h-5 w-5" />
               )}
             </button>
-            {!user && (
+            {user ? (
+              <div className="flex items-center gap-3">
+                <img
+                  src={user.image}
+                  className="h-8 w-8 rounded-full object-cover border border-gray-300 dark:border-gray-600 cursor-pointer hidden md:block"
+                  onClick={() => setActiveTab("profile")}
+                  title="Profile"
+                />
+                <button
+                  onClick={() => {
+                    setEditingPost(null);
+                    setShowPostModal(true);
+                  }}
+                  className="hidden md:flex bg-pink-600 hover:bg-pink-700 text-white px-4 py-1.5 rounded-full text-xs font-bold shadow-lg shadow-pink-600/20 items-center gap-2"
+                >
+                  <PlusSquare className="h-4 w-4" /> Post Ad
+                </button>
+              </div>
+            ) : (
               <button
                 onClick={() => {
                   setAuthMode("login");
