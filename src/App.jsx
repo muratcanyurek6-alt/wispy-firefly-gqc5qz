@@ -723,7 +723,7 @@ export default function App() {
           uid: auth.currentUser.uid,
         },
         { merge: true }
-      ); // Merge true to update
+      ); // Merge true to update existing doc if editing
       window.location.reload();
     }
     setShowOnboarding(false);
