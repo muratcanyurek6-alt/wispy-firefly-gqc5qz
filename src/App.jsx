@@ -58,7 +58,10 @@ import {
   ArrowLeft,
   MoreVertical,
   Plus,
-  Check, // Check ikonu eklendi
+  Check,
+  UploadCloud, // YENİ İKON
+  Clock, // YENİ İKON
+  Sparkles, // YENİ İKON
 } from "lucide-react";
 
 // --- STYLE & CDN ---
@@ -159,7 +162,8 @@ const NavItem = ({
   activeTab,
   setActiveTab,
   requireAuth,
-  handlePostClick,
+  setEditingPost,
+  setShowPostModal,
   mobileOnly,
   badgeCount,
 }) => (
@@ -167,8 +171,11 @@ const NavItem = ({
     onClick={() => {
       if (tab === "post") {
         // İlan verme özel fonksiyonu
-        handlePostClick();
-      } else if (tab === "profile" || tab === "chat") {
+        requireAuth(() => {
+          setEditingPost(null);
+          setShowPostModal(true);
+        });
+      } else if (tab === "profile" || tab === "chat" || tab === "ai-studio") {
         requireAuth(() => {
           setActiveTab(tab);
           window.scrollTo(0, 0);
@@ -387,7 +394,6 @@ const ChatList = ({ user, activeChat, setActiveChat }) => {
   );
 };
 
-// --- CHAT WINDOW ---
 const ChatWindow = ({ activeChat, setActiveChat, user }) => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
@@ -513,7 +519,6 @@ const ChatWindow = ({ activeChat, setActiveChat, user }) => {
   );
 };
 
-// --- CHAT LAYOUT ---
 const ChatLayout = ({ user, activeChat, setActiveChat }) => (
   <div className="flex h-mobile-chat md:h-[calc(100vh-80px)] max-w-6xl mx-auto w-full bg-white dark:bg-gray-900 md:border border-gray-200 dark:border-gray-800 md:rounded-2xl md:shadow-2xl overflow-hidden md:mt-4">
     <div
@@ -591,16 +596,6 @@ const ProfileView = ({
           {user.bio || "No bio yet."}
         </p>
 
-        {/* UPGRADE BUTTON */}
-        {user.plan !== "pro" && (
-          <button
-            onClick={() => setShowPremiumModal(true)}
-            className="mb-6 bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-6 py-2 rounded-full font-bold shadow-lg animate-pulse"
-          >
-            Upgrade to PRO 👑
-          </button>
-        )}
-
         <div className="flex justify-center gap-4 mb-6">
           {user.socials?.instagram && (
             <a
@@ -664,102 +659,232 @@ const ProfileView = ({
   );
 };
 
-const AIStudio = () => (
-  <div className="p-4 text-center text-gray-500 flex items-center justify-center h-[50vh]">
-    AI Studio Coming Soon...
-  </div>
-);
+// --- YENİ AI STUDIO BİLEŞENİ (V1.0) ---
+const AIStudio = ({ user }) => {
+  const [step, setStep] = useState(1);
+  const [refImage, setRefImage] = useState(null);
+  const [prompt, setPrompt] = useState("");
+  const [email, setEmail] = useState(user?.email || "");
+  const [uploading, setUploading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-// --- YENİ GÜNCELLENMİŞ PREMIUM MODAL ---
-function PremiumModal({ onClose, user }) {
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setRefImage(file);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!refImage || !prompt.trim() || !email.trim()) {
+      alert("Please fill in all fields.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      // 1. Resmi Cloudinary'ye yükle
+      setUploading(true);
+      const imageUrl = await uploadImageToCloudinary(refImage);
+      setUploading(false);
+
+      if (!imageUrl) throw new Error("Image upload failed");
+
+      // 2. Siparişi Veritabanına Kaydet (Manual Processing İçin)
+      await addDoc(collection(db, "ai_orders"), {
+        userId: user.id,
+        userName: user.name,
+        refImageUrl: imageUrl,
+        prompt: prompt,
+        deliveryEmail: email,
+        status: "pending",
+        createdAt: serverTimestamp(),
+      });
+
+      alert(
+        "🎉 Request Received! We will email your photos within 24-48 hours."
+      );
+      // Formu sıfırla
+      setRefImage(null);
+      setPrompt("");
+      setStep(1);
+    } catch (error) {
+      console.error("AI Order Error:", error);
+      alert("Something went wrong. Please try again.");
+    }
+    setIsSubmitting(false);
+  };
+
   return (
-    <div className="fixed inset-0 bg-black/50 dark:bg-black/90 flex items-center justify-center backdrop-blur-sm z-[80] p-4">
-      <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-200 dark:border-gray-800 text-center shadow-2xl relative max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 dark:hover:text-white"
-        >
-          <X className="h-5 w-5" />
-        </button>
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-          Upgrade Your Plan 🚀
-        </h2>
-        <p className="text-gray-500 dark:text-gray-400 mb-8">
-          Unlock exclusive features and boost your reach.
-        </p>
-
-        <div className="grid md:grid-cols-2 gap-4">
-          {/* PLAN 1: CREATOR PLUS ($9) */}
-          <div className="border border-gray-200 dark:border-gray-700 rounded-2xl p-6 hover:border-pink-500 transition-all cursor-pointer flex flex-col">
-            <div className="text-pink-500 font-bold text-lg mb-2">
-              CREATOR PLUS
-            </div>
-            <div className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-              $9<span className="text-sm text-gray-500">/mo</span>
-            </div>
-            <ul className="text-left space-y-2 mb-6 text-sm text-gray-600 dark:text-gray-300 flex-1">
-              <li className="flex items-center gap-2">
-                <Check className="h-4 w-4 text-green-500" /> Verified Badge
-                (Blue Check)
-              </li>
-              <li className="flex items-center gap-2">
-                <Check className="h-4 w-4 text-green-500" /> 2 Boosts / Month
-              </li>
-              <li className="flex items-center gap-2">
-                <Check className="h-4 w-4 text-green-500" /> Unlimited Messages
-              </li>
-            </ul>
-            {/* STRIPE LINK BURAYA GELECEK */}
-            <a
-              href="#"
-              className="block w-full bg-pink-600 hover:bg-pink-700 text-white font-bold py-3 rounded-xl shadow-lg transition-colors"
-            >
-              Choose Creator
-            </a>
-          </div>
-
-          {/* PLAN 2: AGENCY / PRO ($29) */}
-          <div className="border-2 border-yellow-500 bg-yellow-50/50 dark:bg-yellow-900/10 rounded-2xl p-6 relative flex flex-col">
-            <div className="absolute top-0 right-0 bg-yellow-500 text-black text-[10px] font-bold px-2 py-1 rounded-bl-lg">
-              MOST POPULAR
-            </div>
-            <div className="text-yellow-600 dark:text-yellow-500 font-bold text-lg mb-2">
-              AGENCY / PRO
-            </div>
-            <div className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-              $29<span className="text-sm text-gray-500">/mo</span>
-            </div>
-            <ul className="text-left space-y-2 mb-6 text-sm text-gray-600 dark:text-gray-300 flex-1">
-              <li className="flex items-center gap-2">
-                <Check className="h-4 w-4 text-green-500" />{" "}
-                <b>Everything in Creator</b>
-              </li>
-              <li className="flex items-center gap-2">
-                <Check className="h-4 w-4 text-green-500" />{" "}
-                <b>Spotlight Feature</b> (Top Bar)
-              </li>
-              <li className="flex items-center gap-2">
-                <Check className="h-4 w-4 text-green-500" /> 5 Boosts + 5 Urgent
-              </li>
-              <li className="flex items-center gap-2">
-                <Check className="h-4 w-4 text-green-500" /> AI Studio Pro
-                Access
-              </li>
-            </ul>
-            {/* STRIPE LINK BURAYA GELECEK */}
-            <a
-              href="#"
-              className="block w-full bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-bold py-3 rounded-xl shadow-lg transition-colors"
-            >
-              Go Pro Agency
-            </a>
-          </div>
+    <div className="max-w-2xl mx-auto px-4 py-8 pb-24">
+      <div className="text-center mb-8">
+        <div className="inline-flex items-center justify-center p-3 bg-gradient-to-tr from-blue-600 to-purple-600 rounded-2xl shadow-lg mb-4">
+          <Wand2 className="h-8 w-8 text-white" />
         </div>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+          AI Character Studio
+        </h1>
+        <p className="text-gray-500 dark:text-gray-400">
+          Generate consistent character photos in any pose. <br />
+          <span className="text-pink-500 font-bold">
+            99.8% Consistency Guaranteed.
+          </span>
+        </p>
+      </div>
+
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-xl">
+        {/* Steps Progress */}
+        <div className="flex justify-between mb-8 relative">
+          <div className="absolute top-1/2 left-0 w-full h-0.5 bg-gray-200 dark:bg-gray-800 -z-10"></div>
+          {[1, 2, 3].map((s) => (
+            <div
+              key={s}
+              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                step >= s
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-200 dark:bg-gray-800 text-gray-500"
+              }`}
+            >
+              {s}
+            </div>
+          ))}
+        </div>
+
+        {/* STEP 1: UPLOAD */}
+        {step === 1 && (
+          <div className="animate-in fade-in slide-in-from-right-4 duration-300">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+              1. Upload Reference Photo
+            </h3>
+            <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-2xl p-8 text-center hover:border-blue-500 transition-colors cursor-pointer relative group">
+              <input
+                type="file"
+                className="absolute inset-0 opacity-0 cursor-pointer"
+                onChange={handleImageChange}
+                accept="image/*"
+              />
+              {refImage ? (
+                <div className="relative">
+                  <img
+                    src={URL.createObjectURL(refImage)}
+                    className="max-h-64 mx-auto rounded-lg shadow-lg"
+                  />
+                  <div className="mt-4 text-blue-500 font-bold flex items-center justify-center gap-2">
+                    <Check className="h-4 w-4" /> Photo Selected
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center text-gray-500">
+                  <UploadCloud className="h-12 w-12 mb-4 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                  <p>Tap to upload your best photo</p>
+                  <p className="text-xs mt-2 opacity-60">
+                    Clear face, good lighting recommended
+                  </p>
+                </div>
+              )}
+            </div>
+            <button
+              disabled={!refImage}
+              onClick={() => setStep(2)}
+              className="w-full mt-6 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl shadow-lg transition-all"
+            >
+              Next Step
+            </button>
+          </div>
+        )}
+
+        {/* STEP 2: PROMPT */}
+        {step === 2 && (
+          <div className="animate-in fade-in slide-in-from-right-4 duration-300">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+              2. Describe the Scene
+            </h3>
+            <textarea
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-xl p-4 text-gray-900 dark:text-white focus:border-blue-500 outline-none min-h-[150px]"
+              placeholder="E.g. Sitting in a luxury hotel lobby, wearing a red dress, drinking coffee..."
+            />
+            <div className="flex gap-2 mt-6">
+              <button
+                onClick={() => setStep(1)}
+                className="flex-1 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-bold py-3 rounded-xl"
+              >
+                Back
+              </button>
+              <button
+                disabled={!prompt.trim()}
+                onClick={() => setStep(3)}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold py-3 rounded-xl shadow-lg"
+              >
+                Next Step
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 3: CONFIRM */}
+        {step === 3 && (
+          <div className="animate-in fade-in slide-in-from-right-4 duration-300">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+              3. Delivery Details
+            </h3>
+
+            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl mb-6 flex items-start gap-3">
+              <Clock className="h-6 w-6 text-blue-600 mt-1 flex-shrink-0" />
+              <div>
+                <h4 className="font-bold text-blue-700 dark:text-blue-400">
+                  Manual Processing
+                </h4>
+                <p className="text-sm text-blue-600/80 dark:text-blue-300/80">
+                  To ensure <span className="font-bold">99.8% consistency</span>{" "}
+                  (tattoos, face details), our expert team processes these
+                  requests manually. You will receive 4 photos in your email.
+                </p>
+                <p className="text-xs font-bold mt-2 text-blue-700 dark:text-blue-400">
+                  Est. Delivery: 24-48 Hours
+                </p>
+              </div>
+            </div>
+
+            <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">
+              Delivery Email
+            </label>
+            <input
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white outline-none mb-6"
+            />
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => setStep(2)}
+                className="flex-1 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-bold py-3 rounded-xl"
+              >
+                Back
+              </button>
+              <button
+                disabled={isSubmitting}
+                onClick={handleSubmit}
+                className="flex-[2] bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-3 rounded-xl shadow-lg flex items-center justify-center gap-2"
+              >
+                {isSubmitting ? (
+                  <>Processing...</>
+                ) : (
+                  <>
+                    <Sparkles className="h-5 w-5" /> Generate Magic
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
-}
+};
 
+// --- MODALS ---
 function AuthModal({ mode, setMode, onClose, onSubmit }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -1065,6 +1190,96 @@ function PostModal({ onClose, onSubmit }) {
   );
 }
 
+// --- PREMIUM MODAL (PAYWALL) ---
+function PremiumModal({ onClose, user }) {
+  return (
+    <div className="fixed inset-0 bg-black/50 dark:bg-black/90 flex items-center justify-center backdrop-blur-sm z-[80] p-4">
+      <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-200 dark:border-gray-800 text-center shadow-2xl relative max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 dark:hover:text-white"
+        >
+          <X className="h-5 w-5" />
+        </button>
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+          Upgrade Your Plan 🚀
+        </h2>
+        <p className="text-gray-500 dark:text-gray-400 mb-8">
+          Choose the plan that fits your needs.
+        </p>
+        <div className="grid md:grid-cols-2 gap-4">
+          {/* PLAN 1: CREATOR PLUS */}
+          <div className="border border-gray-200 dark:border-gray-700 rounded-2xl p-6 hover:border-pink-500 transition-all cursor-pointer flex flex-col">
+            <div className="text-pink-500 font-bold text-lg mb-2">
+              CREATOR PLUS
+            </div>
+            <div className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+              $9<span className="text-sm text-gray-500">/mo</span>
+            </div>
+            <ul className="text-left space-y-2 mb-6 text-sm text-gray-600 dark:text-gray-300 flex-1">
+              <li className="flex items-center gap-2">
+                <Check className="h-4 w-4 text-green-500" /> Verified Badge
+                (Blue Check)
+              </li>
+              <li className="flex items-center gap-2">
+                <Check className="h-4 w-4 text-green-500" /> 2 Boosts / Month
+              </li>
+              <li className="flex items-center gap-2">
+                <Check className="h-4 w-4 text-green-500" /> Unlimited Messages
+              </li>
+            </ul>
+            <a
+              href={`${STRIPE_LINKS.plan_9}?client_reference_id=${user.uid}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full bg-pink-600 hover:bg-pink-700 text-white font-bold py-3 rounded-xl shadow-lg transition-colors"
+            >
+              Choose Creator
+            </a>
+          </div>
+          {/* PLAN 2: AGENCY / PRO */}
+          <div className="border-2 border-yellow-500 bg-yellow-50/50 dark:bg-yellow-900/10 rounded-2xl p-6 relative flex flex-col">
+            <div className="absolute top-0 right-0 bg-yellow-500 text-black text-[10px] font-bold px-2 py-1 rounded-bl-lg">
+              MOST POPULAR
+            </div>
+            <div className="text-yellow-600 dark:text-yellow-500 font-bold text-lg mb-2">
+              AGENCY / PRO
+            </div>
+            <div className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+              $29<span className="text-sm text-gray-500">/mo</span>
+            </div>
+            <ul className="text-left space-y-2 mb-6 text-sm text-gray-600 dark:text-gray-300 flex-1">
+              <li className="flex items-center gap-2">
+                <Check className="h-4 w-4 text-green-500" />{" "}
+                <b>Everything in Creator</b>
+              </li>
+              <li className="flex items-center gap-2">
+                <Check className="h-4 w-4 text-green-500" />{" "}
+                <b>Spotlight Feature</b> (Top Bar)
+              </li>
+              <li className="flex items-center gap-2">
+                <Check className="h-4 w-4 text-green-500" /> 5 Boosts + 5 Urgent
+              </li>
+              <li className="flex items-center gap-2">
+                <Check className="h-4 w-4 text-green-500" /> AI Studio Pro
+                Access
+              </li>
+            </ul>
+            <a
+              href={`${STRIPE_LINKS.plan_29}?client_reference_id=${user.uid}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-bold py-3 rounded-xl shadow-lg transition-colors"
+            >
+              Go Pro Agency
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // --- 5. MAIN APP ---
 export default function App() {
   const [activeTab, setActiveTab] = useState("feed");
@@ -1140,21 +1355,20 @@ export default function App() {
     );
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setUnreadCount(snapshot.size);
-      console.log("Unread Count:", snapshot.size);
     });
 
     return () => unsubscribe();
   }, [user]);
 
-  // --- HANDLE POST AD CLICK (YENİ EKLENDİ) ---
+  // --- HANDLE POST AD CLICK (PAYWALL MANTIĞI) ---
   const handlePostClick = () => {
     requireAuth(() => {
       // Kullanıcı 'pro' veya 'agency' planındaysa direkt ilan verdir
-      // Değilse (free veya undefined) Ödeme Duvarını aç
       if (user?.plan === "pro" || user?.plan === "agency") {
         setEditingPost(null);
         setShowPostModal(true);
       } else {
+        // Değilse Ödeme Duvarını aç
         setShowPremiumModal(true);
       }
     });
@@ -1409,7 +1623,7 @@ export default function App() {
             )}
             {user && (
               <div className="hidden md:flex items-center gap-3 ml-4">
-                {/* YENİ POST AD BUTONU - Ödeme Kontrolü ile */}
+                {/* POST AD BUTONU - ARTIK PREMIUM KONTROLÜ YAPIYOR */}
                 <button
                   onClick={handlePostClick}
                   className="hidden md:flex bg-pink-600 hover:bg-pink-700 text-white px-4 py-1.5 rounded-full text-xs font-bold shadow-lg shadow-pink-600/20 items-center gap-2"
@@ -1599,7 +1813,7 @@ export default function App() {
         </>
       )}
 
-      {activeTab === "ai-studio" && <AIStudio />}
+      {activeTab === "ai-studio" && <AIStudio user={user} />}
       {activeTab === "chat" && (
         <ChatLayout
           user={user}
@@ -1636,6 +1850,7 @@ export default function App() {
             requireAuth={requireAuth}
             mobileOnly
           />
+          {/* MOBİLDEKİ ORTA BUTON DA ARTIK PREMIUM KONTROLLÜ */}
           <div className="relative -top-5">
             <button
               onClick={handlePostClick}
