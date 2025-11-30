@@ -365,12 +365,10 @@ const ChatList = ({ user, activeChat, setActiveChat }) => {
                 {chat.name}
               </h3>
               <span className="text-[10px] text-gray-400 whitespace-nowrap ml-2">
-                {chat.time
-                  ?.toDate()
-                  .toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                {chat.time?.toDate().toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
               </span>
             </div>
             <div className="flex justify-between items-center">
