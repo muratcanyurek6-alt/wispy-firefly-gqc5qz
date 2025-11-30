@@ -59,7 +59,7 @@ import {
   MoreVertical,
 } from "lucide-react";
 
-// --- TASARIM KURTARICI ---
+// --- STYLE & CDN ---
 const TailwindCDN = () => (
   <>
     <link
@@ -72,17 +72,32 @@ const TailwindCDN = () => (
       .safe-area-top { padding-top: env(safe-area-inset-top); }
       .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom); }
       .h-mobile-chat { height: calc(100vh - 60px); }
+      /* Bildirim Rozeti Stili */
+      .notification-dot {
+        position: absolute;
+        top: -2px;
+        right: -2px;
+        width: 10px;
+        height: 10px;
+        background-color: #ef4444;
+        border-radius: 50%;
+        border: 2px solid white;
+        z-index: 50;
+      }
+      .dark .notification-dot {
+        border-color: #111827;
+      }
     `}</style>
   </>
 );
 
-/* --- CLOUDINARY AYARLARI --- */
+/* --- CLOUDINARY CONFIG --- */
 const CLOUDINARY_CONFIG = {
   cloudName: "dqoh1mjjk",
   uploadPreset: "yxdnini8",
 };
 
-/* --- FIREBASE AYARLARI --- */
+/* --- FIREBASE CONFIG --- */
 const firebaseConfig = {
   apiKey: "AIzaSyAQmTeBxY21B0y51uJVfGCirJIi4xuSeWE",
   authDomain: "linkup-app-6318c.firebaseapp.com",
@@ -95,12 +110,12 @@ const firebaseConfig = {
 
 const apiKey = ""; // Gemini API Key
 
-/* --- SİSTEM BAŞLATILIYOR --- */
+/* --- INITIALIZE SYSTEM --- */
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-/* --- KATEGORİLER --- */
+/* --- CATEGORIES --- */
 const CATEGORIES = [
   { id: "COLLAB", label: "Collab 🎥", color: "purple" },
   { id: "S4S", label: "S4S / Promo 🔄", color: "pink" },
@@ -110,7 +125,7 @@ const CATEGORIES = [
   { id: "SERVICE", label: "Services 📸", color: "orange" },
 ];
 
-/* --- RESİM YÜKLEME FONKSİYONU --- */
+/* --- IMAGE UPLOAD FUNCTION --- */
 const uploadImageToCloudinary = async (file) => {
   if (!file) return null;
   const formData = new FormData();
@@ -126,18 +141,18 @@ const uploadImageToCloudinary = async (file) => {
     if (data.error) throw new Error(data.error.message);
     return data.secure_url;
   } catch (error) {
-    console.error("Resim yükleme hatası:", error);
-    alert("Resim yüklenemedi.");
+    console.error("Image upload error:", error);
+    alert("Image upload failed.");
     return null;
   }
 };
 
-/* --- SAHTE VERİ OLUŞTURUCU --- */
+/* --- FAKE DATA GENERATOR --- */
 const generateFakeData = async () => {
-  alert("⚠️ Fake Data özelliği kodda mevcut ama buton gizli.");
+  alert("⚠️ Fake Data feature exists in code but button is hidden.");
 };
 
-// --- NAV ITEM COMPONENT (DÜZELTİLDİ: BADGE ÖZELLİĞİ GERİ EKLENDİ) ---
+// --- NAV ITEM COMPONENT (BADGE FIX) ---
 const NavItem = ({
   tab,
   icon: Icon,
@@ -148,7 +163,7 @@ const NavItem = ({
   setEditingPost,
   setShowPostModal,
   mobileOnly,
-  badge, // <-- Bu özellik silinmişti, geri ekledim.
+  badge, // Bildirim Props'u
 }) => (
   <button
     onClick={() => {
@@ -180,10 +195,8 @@ const NavItem = ({
         className={`h-6 w-6 ${activeTab === tab ? "fill-current" : ""}`}
         strokeWidth={activeTab === tab ? 2.5 : 2}
       />
-      {/* KIRMIZI NOKTA (BADGE) ÇİZİMİ */}
-      {badge && (
-        <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-red-600 rounded-full border-2 border-white dark:border-gray-900 animate-pulse z-10"></span>
-      )}
+      {/* KESİN GÖRÜNÜR KIRMIZI NOKTA */}
+      {badge && <span className="notification-dot animate-pulse"></span>}
     </div>
     <span
       className={`text-[10px] mt-0.5 font-medium ${
@@ -195,7 +208,7 @@ const NavItem = ({
   </button>
 );
 
-// --- SPOTLIGHT BİLEŞENİ ---
+// --- SPOTLIGHT COMPONENT ---
 const Spotlight = ({ posts, onProfileClick }) => {
   const scrollRef = React.useRef(null);
   const [isPaused, setIsPaused] = useState(false);
@@ -270,7 +283,7 @@ const Spotlight = ({ posts, onProfileClick }) => {
   );
 };
 
-// --- CHAT LİSTESİ BİLEŞENİ ---
+// --- CHAT LIST COMPONENT ---
 const ChatList = ({ user, activeChat, setActiveChat }) => {
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -303,7 +316,7 @@ const ChatList = ({ user, activeChat, setActiveChat }) => {
           image: otherUser.image || "https://via.placeholder.com/150",
           lastMessage: data.lastMessage,
           time: data.lastUpdated,
-          isUnread, // Bu veri listede kırmızı nokta için kullanılıyor
+          isUnread,
         };
       });
       setChats(chatList);
@@ -373,7 +386,7 @@ const ChatList = ({ user, activeChat, setActiveChat }) => {
                 {chat.lastMessage}
               </p>
               {chat.isUnread && (
-                <div className="w-2.5 h-2.5 bg-pink-500 rounded-full ml-2 flex-shrink-0"></div>
+                <div className="w-2.5 h-2.5 bg-pink-500 rounded-full ml-2 flex-shrink-0 animate-pulse"></div>
               )}
             </div>
           </div>
@@ -383,7 +396,7 @@ const ChatList = ({ user, activeChat, setActiveChat }) => {
   );
 };
 
-// --- CHAT PENCERESİ BİLEŞENİ ---
+// --- CHAT WINDOW COMPONENT ---
 const ChatWindow = ({ activeChat, setActiveChat, user }) => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
@@ -412,7 +425,6 @@ const ChatWindow = ({ activeChat, setActiveChat, user }) => {
     if (!chatId || !user) return;
     const markAsRead = async () => {
       const chatRef = doc(db, "chats", chatId);
-      // unreadBy listesinden kendi ID'mi siliyorum
       await updateDoc(chatRef, {
         unreadBy: arrayRemove(user.id),
       });
@@ -433,6 +445,8 @@ const ChatWindow = ({ activeChat, setActiveChat, user }) => {
       createdAt: serverTimestamp(),
     });
 
+    // CLAUDE FIX: unreadBy'ı arrayUnion yerine direkt dizi olarak ata (Merge true olduğu için)
+    // Böylece alan yoksa oluşturulur, varsa ezilir (ki bu 1:1 chat için doğrudur)
     const chatRef = doc(db, "chats", chatId);
     await setDoc(
       chatRef,
@@ -447,7 +461,8 @@ const ChatWindow = ({ activeChat, setActiveChat, user }) => {
         },
         lastMessage: messageText,
         lastUpdated: serverTimestamp(),
-        unreadBy: arrayUnion(activeChat.ownerId), // Karşı taraf okumadı olarak işaretle
+        // BURASI DÜZELDİ: arrayUnion yerine garanti yöntem
+        unreadBy: [activeChat.ownerId],
       },
       { merge: true }
     );
@@ -458,7 +473,6 @@ const ChatWindow = ({ activeChat, setActiveChat, user }) => {
       {/* Header */}
       <div className="p-3 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center bg-white dark:bg-gray-900 z-10 shadow-sm sticky top-0 safe-area-top">
         <div className="flex items-center gap-3">
-          {/* Mobil için Geri Butonu */}
           <button
             onClick={() => setActiveChat(null)}
             className="md:hidden text-gray-500 hover:text-gray-900 dark:hover:text-white p-1"
@@ -501,7 +515,6 @@ const ChatWindow = ({ activeChat, setActiveChat, user }) => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Alanı */}
       <form
         onSubmit={handleSendMessage}
         className="p-3 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex gap-2 safe-area-bottom sticky bottom-0"
@@ -1011,6 +1024,7 @@ export default function App() {
     }
   }, [darkMode]);
 
+  // GLOBAL USER AUTH LISTENER
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
@@ -1042,13 +1056,15 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  // GLOBAL BİLDİRİM DİNLEYİCİ (UNREAD MESSAGES)
+  // GLOBAL NOTIFICATION LISTENER (UNREAD MESSAGES)
   useEffect(() => {
     if (!user) {
       setUnreadCount(0);
       return;
     }
 
+    // CLAUDE FIX: Index gerektirebilecek sorgu
+    // Konsolu kontrol et, kırmızı link varsa tıkla.
     const q = query(
       collection(db, "chats"),
       where("unreadBy", "array-contains", user.id)
@@ -1056,6 +1072,7 @@ export default function App() {
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setUnreadCount(snapshot.size);
+      console.log("Unread Count:", snapshot.size); // Debug için
     });
 
     return () => unsubscribe();
