@@ -57,7 +57,8 @@ import {
   TrendingUp,
   ArrowLeft,
   MoreVertical,
-  Plus, // YENİ İKON
+  Plus,
+  Check, // Check ikonu eklendi
 } from "lucide-react";
 
 // --- STYLE & CDN ---
@@ -73,7 +74,6 @@ const TailwindCDN = () => (
       .safe-area-top { padding-top: env(safe-area-inset-top); }
       .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom); }
       .h-mobile-chat { height: calc(100vh - 60px); }
-      /* Bildirim Noktası */
       .notification-badge {
         position: absolute;
         top: -2px;
@@ -85,9 +85,7 @@ const TailwindCDN = () => (
         border: 2px solid white;
         z-index: 50;
       }
-      .dark .notification-badge {
-        border-color: #111827;
-      }
+      .dark .notification-badge { border-color: #111827; }
     `}</style>
   </>
 );
@@ -161,18 +159,15 @@ const NavItem = ({
   activeTab,
   setActiveTab,
   requireAuth,
-  setEditingPost,
-  setShowPostModal,
+  handlePostClick,
   mobileOnly,
   badgeCount,
 }) => (
   <button
     onClick={() => {
       if (tab === "post") {
-        requireAuth(() => {
-          setEditingPost(null);
-          setShowPostModal(true);
-        });
+        // İlan verme özel fonksiyonu
+        handlePostClick();
       } else if (tab === "profile" || tab === "chat") {
         requireAuth(() => {
           setActiveTab(tab);
@@ -220,7 +215,6 @@ const Spotlight = ({ posts, onProfileClick }) => {
     const scrollContainer = scrollRef.current;
     if (!scrollContainer) return;
     const scrollStep = 1;
-
     const scrollInterval = setInterval(() => {
       if (scrollContainer && !isPaused) {
         scrollContainer.scrollLeft += scrollStep;
@@ -285,20 +279,18 @@ const Spotlight = ({ posts, onProfileClick }) => {
   );
 };
 
-// --- CHAT LIST COMPONENT ---
+// --- CHAT LIST ---
 const ChatList = ({ user, activeChat, setActiveChat }) => {
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) return;
-
     const q = query(
       collection(db, "chats"),
       where("participants", "array-contains", user.id),
       orderBy("lastUpdated", "desc")
     );
-
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const chatList = snapshot.docs.map((doc) => {
         const data = doc.data();
@@ -307,9 +299,7 @@ const ChatList = ({ user, activeChat, setActiveChat }) => {
           name: "Unknown",
           image: "https://via.placeholder.com/150",
         };
-
         const isUnread = data.unreadBy?.includes(user.id);
-
         return {
           id: doc.id,
           ownerId: otherUserId,
@@ -332,15 +322,13 @@ const ChatList = ({ user, activeChat, setActiveChat }) => {
         <Loader2 className="h-6 w-6 animate-spin mx-auto text-pink-500" />
       </div>
     );
-
-  if (chats.length === 0) {
+  if (chats.length === 0)
     return (
       <div className="p-8 text-center text-gray-500">
         <MessageCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
         <p>No messages yet.</p>
       </div>
     );
-  }
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -370,10 +358,12 @@ const ChatList = ({ user, activeChat, setActiveChat }) => {
                 {chat.name}
               </h3>
               <span className="text-[10px] text-gray-400 whitespace-nowrap ml-2">
-                {chat.time?.toDate().toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
+                {chat.time
+                  ?.toDate()
+                  .toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
               </span>
             </div>
             <div className="flex justify-between items-center">
@@ -397,12 +387,11 @@ const ChatList = ({ user, activeChat, setActiveChat }) => {
   );
 };
 
-// --- CHAT WINDOW COMPONENT ---
+// --- CHAT WINDOW ---
 const ChatWindow = ({ activeChat, setActiveChat, user }) => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef(null);
-
   const chatId = [user.id, activeChat.ownerId].sort().join("_");
 
   useEffect(() => {
@@ -421,33 +410,25 @@ const ChatWindow = ({ activeChat, setActiveChat, user }) => {
     return () => unsubscribe();
   }, [chatId]);
 
-  // --- OKUNDU İŞARETLEME ---
-  // Claude'un önerdiği doğru çözüm: `messages` bağımlılığı kaldırıldı.
-  // Bu sayede sadece sohbet açıldığında mesajlar okundu olarak işaretlenir.
   useEffect(() => {
     if (!chatId || !user) return;
     const markAsRead = async () => {
       const chatRef = doc(db, "chats", chatId);
-      await updateDoc(chatRef, {
-        unreadBy: arrayRemove(user.id),
-      });
+      await updateDoc(chatRef, { unreadBy: arrayRemove(user.id) });
     };
     markAsRead();
-  }, [chatId, user]); // <-- messages bağımlılığı buradan kaldırıldı
+  }, [chatId, user, messages]);
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
-
     const messageText = newMessage;
     setNewMessage("");
-
     await addDoc(collection(db, "chats", chatId, "messages"), {
       text: messageText,
       senderId: user.id,
       createdAt: serverTimestamp(),
     });
-
     const chatRef = doc(db, "chats", chatId);
     await setDoc(
       chatRef,
@@ -462,8 +443,7 @@ const ChatWindow = ({ activeChat, setActiveChat, user }) => {
         },
         lastMessage: messageText,
         lastUpdated: serverTimestamp(),
-        // DÜZELTME: arrayUnion kullanmak, var olan okunmamış mesajların üzerine yazılmasını engeller.
-        unreadBy: arrayUnion(activeChat.ownerId),
+        unreadBy: [activeChat.ownerId],
       },
       { merge: true }
     );
@@ -479,7 +459,6 @@ const ChatWindow = ({ activeChat, setActiveChat, user }) => {
           >
             <ArrowLeft className="h-6 w-6" />
           </button>
-
           <img
             src={activeChat.image}
             className="h-10 w-10 rounded-full object-cover border border-gray-200 dark:border-gray-700"
@@ -497,7 +476,6 @@ const ChatWindow = ({ activeChat, setActiveChat, user }) => {
           <MoreVertical className="h-5 w-5" />
         </button>
       </div>
-
       <div className="flex-1 bg-gray-50 dark:bg-black/50 p-4 overflow-y-auto flex flex-col gap-3">
         {messages.map((msg) => (
           <div
@@ -513,7 +491,6 @@ const ChatWindow = ({ activeChat, setActiveChat, user }) => {
         ))}
         <div ref={messagesEndRef} />
       </div>
-
       <form
         onSubmit={handleSendMessage}
         className="p-3 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex gap-2 safe-area-bottom sticky bottom-0"
@@ -537,54 +514,55 @@ const ChatWindow = ({ activeChat, setActiveChat, user }) => {
 };
 
 // --- CHAT LAYOUT ---
-const ChatLayout = ({ user, activeChat, setActiveChat }) => {
-  return (
-    <div className="flex h-mobile-chat md:h-[calc(100vh-80px)] max-w-6xl mx-auto w-full bg-white dark:bg-gray-900 md:border border-gray-200 dark:border-gray-800 md:rounded-2xl md:shadow-2xl overflow-hidden md:mt-4">
-      <div
-        className={`w-full md:w-[350px] border-r border-gray-200 dark:border-gray-800 flex flex-col bg-white dark:bg-gray-900 ${
-          activeChat ? "hidden md:flex" : "flex"
-        }`}
-      >
-        <div className="p-4 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 safe-area-top">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-            Messages
-          </h2>
-        </div>
-        <ChatList
-          user={user}
+const ChatLayout = ({ user, activeChat, setActiveChat }) => (
+  <div className="flex h-mobile-chat md:h-[calc(100vh-80px)] max-w-6xl mx-auto w-full bg-white dark:bg-gray-900 md:border border-gray-200 dark:border-gray-800 md:rounded-2xl md:shadow-2xl overflow-hidden md:mt-4">
+    <div
+      className={`w-full md:w-[350px] border-r border-gray-200 dark:border-gray-800 flex flex-col bg-white dark:bg-gray-900 ${
+        activeChat ? "hidden md:flex" : "flex"
+      }`}
+    >
+      <div className="p-4 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 safe-area-top">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+          Messages
+        </h2>
+      </div>
+      <ChatList
+        user={user}
+        activeChat={activeChat}
+        setActiveChat={setActiveChat}
+      />
+    </div>
+    <div
+      className={`flex-1 bg-gray-50 dark:bg-black/20 ${
+        !activeChat
+          ? "hidden md:flex items-center justify-center"
+          : "flex flex-col fixed inset-0 z-[100] md:static"
+      }`}
+    >
+      {activeChat ? (
+        <ChatWindow
           activeChat={activeChat}
           setActiveChat={setActiveChat}
+          user={user}
         />
-      </div>
-
-      <div
-        className={`flex-1 bg-gray-50 dark:bg-black/20 ${
-          !activeChat
-            ? "hidden md:flex items-center justify-center"
-            : "flex flex-col fixed inset-0 z-[100] md:static"
-        }`}
-      >
-        {activeChat ? (
-          <ChatWindow
-            activeChat={activeChat}
-            setActiveChat={setActiveChat}
-            user={user}
-          />
-        ) : (
-          <div className="text-center text-gray-400 hidden md:block">
-            <MessageCircle className="h-16 w-16 mx-auto mb-4 opacity-20" />
-            <p className="text-lg">Select a conversation to start chatting</p>
-          </div>
-        )}
-      </div>
+      ) : (
+        <div className="text-center text-gray-400 hidden md:block">
+          <MessageCircle className="h-16 w-16 mx-auto mb-4 opacity-20" />
+          <p className="text-lg">Select a conversation to start chatting</p>
+        </div>
+      )}
     </div>
-  );
-};
+  </div>
+);
 
-// --- PROFILE VIEW ---
-const ProfileView = ({ user, setShowOnboarding, handleLogout, posts }) => {
+const ProfileView = ({
+  user,
+  setShowOnboarding,
+  handleLogout,
+  posts,
+  setShowPremiumModal,
+}) => {
   const myPosts = posts.filter((p) => p.ownerId === user.id);
-
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 pb-24">
       <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-lg text-center mb-8">
@@ -600,8 +578,11 @@ const ProfileView = ({ user, setShowOnboarding, handleLogout, posts }) => {
             <Edit2 className="h-4 w-4" />
           </button>
         </div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          {user.name}
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex justify-center items-center gap-2">
+          {user.name}{" "}
+          {user.plan === "pro" && (
+            <CheckCircle className="h-5 w-5 text-blue-500" />
+          )}
         </h1>
         <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">
           {user.email}
@@ -609,6 +590,17 @@ const ProfileView = ({ user, setShowOnboarding, handleLogout, posts }) => {
         <p className="text-gray-700 dark:text-gray-300 max-w-md mx-auto mb-6">
           {user.bio || "No bio yet."}
         </p>
+
+        {/* UPGRADE BUTTON */}
+        {user.plan !== "pro" && (
+          <button
+            onClick={() => setShowPremiumModal(true)}
+            className="mb-6 bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-6 py-2 rounded-full font-bold shadow-lg animate-pulse"
+          >
+            Upgrade to PRO 👑
+          </button>
+        )}
+
         <div className="flex justify-center gap-4 mb-6">
           {user.socials?.instagram && (
             <a
@@ -678,11 +670,99 @@ const AIStudio = () => (
   </div>
 );
 
-// --- MODALS ---
+// --- YENİ GÜNCELLENMİŞ PREMIUM MODAL ---
+function PremiumModal({ onClose, user }) {
+  return (
+    <div className="fixed inset-0 bg-black/50 dark:bg-black/90 flex items-center justify-center backdrop-blur-sm z-[80] p-4">
+      <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-200 dark:border-gray-800 text-center shadow-2xl relative max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 dark:hover:text-white"
+        >
+          <X className="h-5 w-5" />
+        </button>
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+          Upgrade Your Plan 🚀
+        </h2>
+        <p className="text-gray-500 dark:text-gray-400 mb-8">
+          Unlock exclusive features and boost your reach.
+        </p>
+
+        <div className="grid md:grid-cols-2 gap-4">
+          {/* PLAN 1: CREATOR PLUS ($9) */}
+          <div className="border border-gray-200 dark:border-gray-700 rounded-2xl p-6 hover:border-pink-500 transition-all cursor-pointer flex flex-col">
+            <div className="text-pink-500 font-bold text-lg mb-2">
+              CREATOR PLUS
+            </div>
+            <div className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+              $9<span className="text-sm text-gray-500">/mo</span>
+            </div>
+            <ul className="text-left space-y-2 mb-6 text-sm text-gray-600 dark:text-gray-300 flex-1">
+              <li className="flex items-center gap-2">
+                <Check className="h-4 w-4 text-green-500" /> Verified Badge
+                (Blue Check)
+              </li>
+              <li className="flex items-center gap-2">
+                <Check className="h-4 w-4 text-green-500" /> 2 Boosts / Month
+              </li>
+              <li className="flex items-center gap-2">
+                <Check className="h-4 w-4 text-green-500" /> Unlimited Messages
+              </li>
+            </ul>
+            {/* STRIPE LINK BURAYA GELECEK */}
+            <a
+              href="#"
+              className="block w-full bg-pink-600 hover:bg-pink-700 text-white font-bold py-3 rounded-xl shadow-lg transition-colors"
+            >
+              Choose Creator
+            </a>
+          </div>
+
+          {/* PLAN 2: AGENCY / PRO ($29) */}
+          <div className="border-2 border-yellow-500 bg-yellow-50/50 dark:bg-yellow-900/10 rounded-2xl p-6 relative flex flex-col">
+            <div className="absolute top-0 right-0 bg-yellow-500 text-black text-[10px] font-bold px-2 py-1 rounded-bl-lg">
+              MOST POPULAR
+            </div>
+            <div className="text-yellow-600 dark:text-yellow-500 font-bold text-lg mb-2">
+              AGENCY / PRO
+            </div>
+            <div className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+              $29<span className="text-sm text-gray-500">/mo</span>
+            </div>
+            <ul className="text-left space-y-2 mb-6 text-sm text-gray-600 dark:text-gray-300 flex-1">
+              <li className="flex items-center gap-2">
+                <Check className="h-4 w-4 text-green-500" />{" "}
+                <b>Everything in Creator</b>
+              </li>
+              <li className="flex items-center gap-2">
+                <Check className="h-4 w-4 text-green-500" />{" "}
+                <b>Spotlight Feature</b> (Top Bar)
+              </li>
+              <li className="flex items-center gap-2">
+                <Check className="h-4 w-4 text-green-500" /> 5 Boosts + 5 Urgent
+              </li>
+              <li className="flex items-center gap-2">
+                <Check className="h-4 w-4 text-green-500" /> AI Studio Pro
+                Access
+              </li>
+            </ul>
+            {/* STRIPE LINK BURAYA GELECEK */}
+            <a
+              href="#"
+              className="block w-full bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-bold py-3 rounded-xl shadow-lg transition-colors"
+            >
+              Go Pro Agency
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AuthModal({ mode, setMode, onClose, onSubmit }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
   return (
     <div className="fixed inset-0 bg-black/50 dark:bg-black/90 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
       <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl w-full max-w-sm p-8 relative shadow-2xl">
@@ -703,7 +783,7 @@ function AuthModal({ mode, setMode, onClose, onSubmit }) {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none focus:border-pink-500 transition-colors placeholder:text-gray-400 dark:placeholder:text-gray-500"
+            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none focus:border-pink-500 transition-colors"
             placeholder="Email"
             required
           />
@@ -711,7 +791,7 @@ function AuthModal({ mode, setMode, onClose, onSubmit }) {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none focus:border-pink-500 transition-colors placeholder:text-gray-400 dark:placeholder:text-gray-500"
+            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none focus:border-pink-500 transition-colors"
             placeholder="Password"
             required
           />
@@ -750,7 +830,6 @@ function OnboardingModal({ onComplete, initialData }) {
   });
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
-
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -761,7 +840,6 @@ function OnboardingModal({ onComplete, initialData }) {
       });
     }
   };
-
   const handleSave = async () => {
     if (!data.name.trim()) {
       alert("Please enter a Display Name.");
@@ -776,7 +854,6 @@ function OnboardingModal({ onComplete, initialData }) {
     }
     setSaving(false);
   };
-
   return (
     <div className="fixed inset-0 bg-black/95 z-[80] flex items-center justify-center p-4">
       <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl w-full max-w-md p-8 text-center shadow-2xl max-h-[90vh] overflow-y-auto relative">
@@ -791,7 +868,6 @@ function OnboardingModal({ onComplete, initialData }) {
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
           {initialData ? "Edit Profile" : "Setup Profile"}
         </h2>
-
         <div className="relative w-24 h-24 mx-auto mb-4 group cursor-pointer">
           <img
             src={data.image}
@@ -812,7 +888,6 @@ function OnboardingModal({ onComplete, initialData }) {
             onChange={handleImageUpload}
           />
         </div>
-
         <div className="space-y-4 text-left">
           <div>
             <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">
@@ -821,11 +896,10 @@ function OnboardingModal({ onComplete, initialData }) {
             <input
               value={data.name}
               onChange={(e) => setData({ ...data, name: e.target.value })}
-              className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none mt-1 focus:border-pink-500 transition-colors placeholder:text-gray-400 dark:placeholder:text-gray-500"
+              className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none mt-1 focus:border-pink-500 transition-colors"
               placeholder="e.g. Jessica Rabbit"
             />
           </div>
-
           <div>
             <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">
               About You (Bio)
@@ -833,7 +907,7 @@ function OnboardingModal({ onComplete, initialData }) {
             <textarea
               value={data.bio}
               onChange={(e) => setData({ ...data, bio: e.target.value })}
-              className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none mt-1 focus:border-pink-500 transition-colors placeholder:text-gray-400 dark:placeholder:text-gray-500"
+              className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm outline-none mt-1 focus:border-pink-500 transition-colors"
               placeholder="Tell us about yourself..."
               rows="3"
               maxLength={500}
@@ -842,7 +916,6 @@ function OnboardingModal({ onComplete, initialData }) {
               {data.bio?.length || 0}/500
             </div>
           </div>
-
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">
@@ -853,7 +926,7 @@ function OnboardingModal({ onComplete, initialData }) {
                 onChange={(e) =>
                   setData({ ...data, instagram: e.target.value })
                 }
-                className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-2 text-gray-900 dark:text-white text-sm outline-none mt-1 focus:border-pink-500 transition-colors placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-2 text-gray-900 dark:text-white text-sm outline-none mt-1 focus:border-pink-500 transition-colors"
                 placeholder="username"
               />
             </div>
@@ -864,7 +937,7 @@ function OnboardingModal({ onComplete, initialData }) {
               <input
                 value={data.twitter}
                 onChange={(e) => setData({ ...data, twitter: e.target.value })}
-                className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-2 text-gray-900 dark:text-white text-sm outline-none mt-1 focus:border-pink-500 transition-colors placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-2 text-gray-900 dark:text-white text-sm outline-none mt-1 focus:border-pink-500 transition-colors"
                 placeholder="username"
               />
             </div>
@@ -876,12 +949,11 @@ function OnboardingModal({ onComplete, initialData }) {
             <input
               value={data.onlyfans}
               onChange={(e) => setData({ ...data, onlyfans: e.target.value })}
-              className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-2 text-gray-900 dark:text-white text-sm outline-none mt-1 focus:border-pink-500 transition-colors placeholder:text-gray-400 dark:placeholder:text-gray-500"
+              className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-2 text-gray-900 dark:text-white text-sm outline-none mt-1 focus:border-pink-500 transition-colors"
               placeholder="https://..."
             />
           </div>
         </div>
-
         <button
           onClick={handleSave}
           disabled={saving}
@@ -1023,6 +1095,7 @@ export default function App() {
     }
   }, [darkMode]);
 
+  // GLOBAL USER AUTH LISTENER
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
@@ -1065,13 +1138,27 @@ export default function App() {
       collection(db, "chats"),
       where("unreadBy", "array-contains", user.id)
     );
-
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setUnreadCount(snapshot.size);
+      console.log("Unread Count:", snapshot.size);
     });
 
     return () => unsubscribe();
   }, [user]);
+
+  // --- HANDLE POST AD CLICK (YENİ EKLENDİ) ---
+  const handlePostClick = () => {
+    requireAuth(() => {
+      // Kullanıcı 'pro' veya 'agency' planındaysa direkt ilan verdir
+      // Değilse (free veya undefined) Ödeme Duvarını aç
+      if (user?.plan === "pro" || user?.plan === "agency") {
+        setEditingPost(null);
+        setShowPostModal(true);
+      } else {
+        setShowPremiumModal(true);
+      }
+    });
+  };
 
   const fetchPosts = async (isLoadMore = false) => {
     setLoadingPosts(true);
@@ -1136,13 +1223,11 @@ export default function App() {
       setShowOnboarding(false);
       return;
     }
-
     if (auth.currentUser) {
       await updateProfile(auth.currentUser, {
         displayName: profileData.name,
         photoURL: profileData.image,
       });
-
       const firestoreData = {
         name: profileData.name,
         image: profileData.image,
@@ -1155,7 +1240,6 @@ export default function App() {
         email: auth.currentUser.email,
         uid: auth.currentUser.uid,
       };
-
       await setDoc(doc(db, "users", auth.currentUser.uid), firestoreData, {
         merge: true,
       });
@@ -1230,7 +1314,6 @@ export default function App() {
   });
 
   const boostedPosts = posts.filter((p) => p.boosted);
-
   const hideBottomNav = activeTab === "chat" && activeChat !== null;
 
   if (authLoading)
@@ -1282,7 +1365,7 @@ export default function App() {
               activeTab={activeTab}
               setActiveTab={setActiveTab}
               requireAuth={requireAuth}
-              badgeCount={unreadCount} // DESKTOP BADGE
+              badgeCount={unreadCount}
             />
             <NavItem
               tab="ai-studio"
@@ -1302,7 +1385,6 @@ export default function App() {
             />
           </div>
 
-          {/* --- SAĞ ÜST KÖŞE (DÜZELTİLDİ: + İLAN EKLE VE PROFİL) --- */}
           <div className="flex items-center gap-3">
             <button
               onClick={() => setDarkMode(!darkMode)}
@@ -1326,18 +1408,14 @@ export default function App() {
               </button>
             )}
             {user && (
-              <div className="flex items-center gap-3 ml-2">
-                {/* MASAÜSTÜ İÇİN "POST AD" BUTONU EKLENDİ */}
+              <div className="hidden md:flex items-center gap-3 ml-4">
+                {/* YENİ POST AD BUTONU - Ödeme Kontrolü ile */}
                 <button
-                  onClick={() => {
-                    setEditingPost(null);
-                    setShowPostModal(true);
-                  }}
+                  onClick={handlePostClick}
                   className="hidden md:flex bg-pink-600 hover:bg-pink-700 text-white px-4 py-1.5 rounded-full text-xs font-bold shadow-lg shadow-pink-600/20 items-center gap-2"
                 >
                   <Plus className="h-4 w-4" /> Post Ad
                 </button>
-
                 <img
                   src={user.image}
                   className="h-8 w-8 rounded-full object-cover border border-gray-600 cursor-pointer"
@@ -1364,14 +1442,12 @@ export default function App() {
                   className="bg-transparent border-none text-gray-900 dark:text-white px-3 py-1 focus:ring-0 outline-none w-full text-sm"
                 />
               </div>
-
               <Spotlight
                 posts={boostedPosts}
                 onProfileClick={(post) =>
                   requireAuth(() => setSelectedProfile(post))
                 }
               />
-
               <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar mt-4">
                 <button
                   onClick={() => setFilter("ALL")}
@@ -1399,7 +1475,6 @@ export default function App() {
               </div>
             </div>
           </div>
-
           <main className="max-w-6xl mx-auto px-4 py-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredPosts.map((post) => (
@@ -1451,29 +1526,24 @@ export default function App() {
                   <p className="text-xs text-gray-600 dark:text-gray-300 mb-3 line-clamp-3">
                     {post.desc}
                   </p>
-
                   <div className="grid grid-cols-2 gap-2 mt-auto">
                     <button className="bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-white py-1.5 rounded-lg text-xs font-bold transition-colors">
                       View Profile
                     </button>
-                    {/* GÜVENLİ MESAJ BUTONU */}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         requireAuth(async () => {
                           const ownerId = post.ownerId;
                           if (!ownerId) return;
-
                           const chatData = {
                             id: [user.id, ownerId].sort().join("_"),
                             ownerId: ownerId,
                             name: post.name,
                             image: post.image,
                           };
-
                           const chatRef = doc(db, "chats", chatData.id);
                           const chatSnap = await getDoc(chatRef);
-
                           if (!chatSnap.exists()) {
                             await setDoc(chatRef, {
                               participants: [user.id, ownerId],
@@ -1489,7 +1559,6 @@ export default function App() {
                               },
                               lastUpdated: serverTimestamp(),
                               createdAt: serverTimestamp(),
-                              // DÜZELTME: arrayUnion kullanmak, var olan okunmamış mesajların üzerine yazılmasını engeller.
                               unreadBy: arrayUnion(ownerId),
                             });
                           } else {
@@ -1497,7 +1566,6 @@ export default function App() {
                               lastUpdated: serverTimestamp(),
                             });
                           }
-
                           setActiveChat(chatData);
                           setActiveTab("chat");
                         });
@@ -1510,7 +1578,6 @@ export default function App() {
                 </div>
               ))}
             </div>
-
             <div className="mt-8 text-center">
               <button
                 onClick={() => fetchPosts(true)}
@@ -1521,7 +1588,6 @@ export default function App() {
               </button>
             </div>
           </main>
-
           <div className="fixed bottom-24 right-4 z-30 md:hidden">
             <button
               onClick={generateFakeData}
@@ -1534,8 +1600,6 @@ export default function App() {
       )}
 
       {activeTab === "ai-studio" && <AIStudio />}
-
-      {/* CHAT SAYFASI */}
       {activeTab === "chat" && (
         <ChatLayout
           user={user}
@@ -1543,17 +1607,16 @@ export default function App() {
           setActiveChat={setActiveChat}
         />
       )}
-
       {activeTab === "profile" && user && (
         <ProfileView
           user={user}
           setShowOnboarding={setShowOnboarding}
           handleLogout={handleLogout}
           posts={posts}
+          setShowPremiumModal={setShowPremiumModal}
         />
       )}
 
-      {/* BOTTOM NAV (Mobil İçin) */}
       {!hideBottomNav && (
         <div className="md:hidden fixed bottom-0 w-full bg-white/90 dark:bg-gray-900/90 backdrop-blur-lg border-t border-gray-200 dark:border-gray-800 flex justify-around items-center z-50 safe-area-bottom pb-1 transition-all duration-300">
           <NavItem
@@ -1575,12 +1638,7 @@ export default function App() {
           />
           <div className="relative -top-5">
             <button
-              onClick={() =>
-                requireAuth(() => {
-                  setEditingPost(null);
-                  setShowPostModal(true);
-                })
-              }
+              onClick={handlePostClick}
               className="bg-gradient-to-tr from-pink-600 to-purple-600 p-4 rounded-full shadow-lg shadow-pink-600/30 text-white transform transition-transform active:scale-95"
             >
               <PlusSquare className="h-6 w-6" />
@@ -1594,7 +1652,7 @@ export default function App() {
             setActiveTab={setActiveTab}
             requireAuth={requireAuth}
             mobileOnly
-            badgeCount={unreadCount} // MOBİL BADGE
+            badgeCount={unreadCount}
           />
           <NavItem
             tab="profile"
@@ -1608,7 +1666,6 @@ export default function App() {
         </div>
       )}
 
-      {/* MODALLAR */}
       {showAuthModal && (
         <AuthModal
           mode={authMode}
@@ -1655,7 +1712,6 @@ export default function App() {
                   <a
                     href={`https://instagram.com/${selectedProfile.socials.instagram}`}
                     target="_blank"
-                    rel="noreferrer"
                     className="flex flex-col items-center bg-gray-100 dark:bg-gray-800 p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 transition-colors"
                   >
                     <Instagram className="h-4 w-4 text-pink-500 mb-1" />
@@ -1668,7 +1724,6 @@ export default function App() {
                   <a
                     href={`https://twitter.com/${selectedProfile.socials.twitter}`}
                     target="_blank"
-                    rel="noreferrer"
                     className="flex flex-col items-center bg-gray-100 dark:bg-gray-800 p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 transition-colors"
                   >
                     <Twitter className="h-4 w-4 text-blue-400 mb-1" />
@@ -1681,7 +1736,6 @@ export default function App() {
                   <a
                     href={selectedProfile.socials.onlyfans}
                     target="_blank"
-                    rel="noreferrer"
                     className="flex flex-col items-center bg-gray-100 dark:bg-gray-800 p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 transition-colors"
                   >
                     <LinkIcon className="h-4 w-4 text-blue-500 mb-1" />
@@ -1691,24 +1745,20 @@ export default function App() {
                   </a>
                 )}
               </div>
-              {/* GÜVENLİ MESAJ BUTONU (MODAL İÇİN) */}
               <button
                 onClick={() => {
                   setSelectedProfile(null);
                   requireAuth(async () => {
                     const ownerId = selectedProfile.ownerId;
                     if (!ownerId) return;
-
                     const chatData = {
                       id: [user.id, ownerId].sort().join("_"),
                       ownerId: ownerId,
                       name: selectedProfile.name,
                       image: selectedProfile.image,
                     };
-
                     const chatRef = doc(db, "chats", chatData.id);
                     const chatSnap = await getDoc(chatRef);
-
                     if (!chatSnap.exists()) {
                       await setDoc(chatRef, {
                         participants: [user.id, ownerId],
@@ -1721,7 +1771,6 @@ export default function App() {
                         },
                         lastUpdated: serverTimestamp(),
                         createdAt: serverTimestamp(),
-                        // DÜZELTME: arrayUnion kullanmak, var olan okunmamış mesajların üzerine yazılmasını engeller.
                         unreadBy: arrayUnion(ownerId),
                       });
                     } else {
@@ -1729,7 +1778,6 @@ export default function App() {
                         lastUpdated: serverTimestamp(),
                       });
                     }
-
                     setActiveChat(chatData);
                     setActiveTab("chat");
                   });
@@ -1744,29 +1792,7 @@ export default function App() {
       )}
 
       {showPremiumModal && (
-        <div className="fixed inset-0 bg-black/50 dark:bg-black/90 flex items-center justify-center backdrop-blur-sm">
-          <div className="bg-white dark:bg-gray-900 p-8 rounded-2xl border border-gray-200 dark:border-gray-800 text-center shadow-2xl relative">
-            <button
-              onClick={() => setShowPremiumModal(false)}
-              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 dark:hover:text-white"
-            >
-              <X className="h-5 w-5" />
-            </button>
-            <Crown className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
-            <h2 className="text-2xl text-gray-900 dark:text-white font-bold mb-2">
-              Go Premium
-            </h2>
-            <p className="text-gray-500 dark:text-gray-400 mb-6">
-              Get featured & more.
-            </p>
-            <button
-              onClick={() => setShowPremiumModal(false)}
-              className="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white px-6 py-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
-            >
-              Close
-            </button>
-          </div>
-        </div>
+        <PremiumModal onClose={() => setShowPremiumModal(false)} user={user} />
       )}
     </div>
   );
